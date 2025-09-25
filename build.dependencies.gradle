@@ -4,7 +4,6 @@ repositories {
     maven { url = 'https://maven.pedropathing.com' }
     maven { url = "https://mymaven.bylazar.com/releases" }
 }
-
 dependencies {
     implementation 'org.firstinspires.ftc:Inspection:11.0.0'
     implementation 'org.firstinspires.ftc:Blocks:11.0.0'
@@ -16,10 +15,10 @@ dependencies {
     implementation 'org.firstinspires.ftc:Vision:11.0.0'
     implementation 'androidx.appcompat:appcompat:1.2.0'
 
-    implementation 'com.pedropathing:ftc:2.0.1'
+    implementation 'com.pedropathing:ftc:2.0.2'
     implementation 'com.pedropathing:telemetry:0.0.6'
     implementation 'com.bylazar:fullpanels:1.0.0'
 
-    implementation 'io.github.bear27570:Yuan:1.1.1'
+    implementation 'io.github.bear27570:Yuan:1.2.1'
 }
 
