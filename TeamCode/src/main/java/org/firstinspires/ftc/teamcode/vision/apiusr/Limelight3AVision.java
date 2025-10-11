@@ -6,7 +6,7 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import org.firstinspires.ftc.teamcode.vision.limelightTFOD;
 
-@TeleOp(name = "Manual Vision OpMode", group = "Sensor")
+@TeleOp(name = "Limelight3AVision", group = "Sensor")
 public class Limelight3AVision extends LinearOpMode {
 
     private limelightTFOD visionAPI;

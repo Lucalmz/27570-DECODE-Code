@@ -8,7 +8,7 @@ import org.firstinspires.ftc.teamcode.vision.husky;
 import org.firstinspires.ftc.robotcore.internal.system.Deadline;
 import java.util.concurrent.TimeUnit;
 
-@TeleOp(name = "HuskyLens Minimal API User", group = "Sensor")
+@TeleOp(name = "HuskyLensVision", group = "Sensor")
 public class HuskyVision extends LinearOpMode {
 
     private husky huskyVision;

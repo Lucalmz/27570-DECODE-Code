@@ -6,7 +6,7 @@ import org.firstinspires.ftc.teamcode.vision.WebcamAprilTag;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import java.util.List;
 
-@TeleOp(name = "Manual AprilTag OpMode", group = "Concept")
+@TeleOp(name = "AprilTagVision", group = "Concept")
 public class AprilTagVision extends LinearOpMode {
 
     private static final boolean USE_WEBCAM = true;
