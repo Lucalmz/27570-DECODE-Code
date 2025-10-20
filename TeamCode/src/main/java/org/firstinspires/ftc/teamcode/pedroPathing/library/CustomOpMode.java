@@ -16,6 +16,7 @@ public class CustomOpMode extends OpMode {
     private final List<PeriodicRunnable> periodicList = new ArrayList<>();
     public void init(){
         gamepad = GamepadEx.GetGamepadEx(gamepad1);
+        Logger.initialize(true,System::nanoTime);
         logger = Logger.getINSTANCE();
         switch (target){
             case TELEOP:
