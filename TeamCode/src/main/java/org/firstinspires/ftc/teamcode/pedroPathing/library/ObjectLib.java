@@ -4,9 +4,12 @@ import com.bear27570.yuan.AdvantageCoreLib.Logging.Logger;
 import com.bear27570.yuan.BotFactory.Gamepad.GamepadEx;
 import com.bear27570.yuan.BotFactory.Motor.MotorEx;
 import com.bear27570.yuan.BotFactory.ThreadManagement.TaskManager;
+import com.pedropathing.follower.Follower;
+
 public class ObjectLib {
     public static MotorEx Shooter;
     public static GamepadEx gamepad;
     public static Logger logger;
-    public static TaskManager Manager = TaskManager.getInstance();
+    public static TaskManager Manager;
+    public static Follower follower;
 }
