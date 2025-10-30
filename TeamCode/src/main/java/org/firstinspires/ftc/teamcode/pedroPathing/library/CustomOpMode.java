@@ -10,6 +10,7 @@ import static org.firstinspires.ftc.teamcode.pedroPathing.library.ObjectLib.*;
 import static org.firstinspires.ftc.teamcode.pedroPathing.library.StatesLib.*;
 
 import org.firstinspires.ftc.teamcode.pedroPathing.Models.Target;
+import org.firstinspires.ftc.teamcode.pedroPathing.Services.IOStream;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,6 +22,7 @@ public class CustomOpMode extends OpMode {
         gamepad = GamepadEx.GetGamepadEx(gamepad1);
         Manager = TaskManager.getInstance();
         telemetryM = PanelsTelemetry.INSTANCE.getTelemetry();
+        ioStream = new IOStream(hardwareMap.appContext);
         logger = Logger.getINSTANCE();
         switch (target){
             case TELEOP:

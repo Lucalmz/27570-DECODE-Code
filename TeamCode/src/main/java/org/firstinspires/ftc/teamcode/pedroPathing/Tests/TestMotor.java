@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode.pedroPathing.Tests;
 import com.bear27570.yuan.BotFactory.Model.MotorType;
 import com.bear27570.yuan.BotFactory.Motor.MotorEx;
 import com.bear27570.yuan.BotFactory.Services.MotorVelocityCalculator;
+import com.bylazar.configurables.annotations.Configurable;
 import com.pedropathing.geometry.Pose;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
