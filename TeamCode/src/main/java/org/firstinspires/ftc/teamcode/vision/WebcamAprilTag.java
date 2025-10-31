@@ -30,6 +30,7 @@ public class WebcamAprilTag {
                 .setDrawTagOutline(true)
                 .setDrawAxes(true)
                 .setDrawCubeProjection(true)
+                .setLensIntrinsics(331.4445, 331.6080, 311.8897, 224.9979)
                 .build();
         aprilTagProcessor.setDecimation(1);
 
