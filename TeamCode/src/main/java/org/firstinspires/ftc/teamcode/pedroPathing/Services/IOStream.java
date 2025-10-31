@@ -82,6 +82,21 @@ public class IOStream {
     public String getData(String key, String defaultValue) {
         return properties.getProperty(key, defaultValue);
     }
+    /**
+     * 清空所有已保存的配置数据。
+     * 此操作会清除内存中的所有属性，并将一个空的配置写回文件。
+     */
+    public void clearAllData() {
+        // 1. 清空内存中的 Properties 对象
+        properties.clear();
+        // 2. 将空的 Properties 对象写回文件，达到清空文件的效果
+        try (FileOutputStream fos = new FileOutputStream(configFile)) {
+            properties.store(fos, "Robot Configuration Cleared");
+            RobotLog.i(TAG, "All configuration data has been cleared.");
+        } catch (IOException e) {
+            RobotLog.e(TAG, "Error clearing data file.", e);
+        }
+    }
 
     /**
      * 从文件中加载所有属性。
