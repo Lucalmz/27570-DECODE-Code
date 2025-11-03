@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.vision;
+package org.firstinspires.ftc.teamcode.vision.Deadeye;
 
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.LLResultTypes;
@@ -10,20 +10,28 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
-public class limelightTFOD {
+public class Deadeye {
 
-    private static final double CAMERA_TILT_DEGREES = 25.0; // 相机物理向下倾斜的角度(deg)
-    private static final double CAMERA_HEIGHT_CM = 25.0;    // 相机镜头中心离地面的高度(cm)
+    public static final double LL_VERTICAL_FOV_DEGREES = 49.7;
+
+    private static final double CAMERA_TILT_DEGREES = 43; // 相机物理向下倾斜的角度(deg)
+    private static final double CAMERA_HEIGHT_CM = 23.5;    // 相机镜头中心离地面的高度(cm)
+
+    // 常量最后更新日期 2025/11/3
+    private static final double ANCHOR_POINT_TY = -LL_VERTICAL_FOV_DEGREES / 2.0;
 
     private final Limelight3A limelight;
     private List<LLResultTypes.DetectorResult> greenDetections = new ArrayList<>();
     private List<LLResultTypes.DetectorResult> purpleDetections = new ArrayList<>();
 
-    private static final Comparator<LLResultTypes.DetectorResult> distanceComparator =
-            (d1, d2) -> Double.compare(d1.getTargetYDegrees(), d2.getTargetYDegrees());
+    private final double[] anchorPointPhysicalCoordinates;
 
-    public limelightTFOD(HardwareMap hardwareMap) {
+    private static final Comparator<LLResultTypes.DetectorResult> distanceComparator =
+            Comparator.comparingDouble(LLResultTypes.DetectorResult::getTargetYDegrees);
+
+    public Deadeye(HardwareMap hardwareMap) {
         limelight = hardwareMap.get(Limelight3A.class, "limelight");
+        this.anchorPointPhysicalCoordinates = calculateCoordinatesFromAngles(0, ANCHOR_POINT_TY);
         limelight.pipelineSwitch(0);
     }
 
@@ -56,19 +64,38 @@ public class limelightTFOD {
         }
     }
 
+    public double[] calculateAlignmentError(LLResultTypes.DetectorResult targetDetection) {
+        if (targetDetection == null || this.anchorPointPhysicalCoordinates == null) {
+            return null;
+        }
+
+        double[] targetCoords = calculateCoordinates(targetDetection);
+        if (targetCoords == null) {
+            return null;
+        }
+
+        double errorX = targetCoords[0] - this.anchorPointPhysicalCoordinates[0];
+        double errorY = targetCoords[1] - this.anchorPointPhysicalCoordinates[1];
+
+        return new double[]{errorX, errorY};
+    }
+
     public double[] calculateCoordinates(LLResultTypes.DetectorResult detection) {
         if (detection == null) {
             return null;
         }
+        return calculateCoordinatesFromAngles(detection.getTargetXDegrees(), detection.getTargetYDegrees());
+    }
 
-        double totalPitchAngleDeg = CAMERA_TILT_DEGREES - detection.getTargetYDegrees();
+    private double[] calculateCoordinatesFromAngles(double tx, double ty) {
+        double totalPitchAngleDeg = CAMERA_TILT_DEGREES - ty;
 
         if (totalPitchAngleDeg <= 0 || totalPitchAngleDeg >= 90) {
             return null;
         }
 
         double totalPitchAngleRad = Math.toRadians(totalPitchAngleDeg);
-        double yawAngleRad = Math.toRadians(detection.getTargetXDegrees());
+        double yawAngleRad = Math.toRadians(tx);
 
         double y_cm = CAMERA_HEIGHT_CM / Math.tan(totalPitchAngleRad);
         double x_cm = y_cm * Math.tan(yawAngleRad);
@@ -94,6 +121,27 @@ public class limelightTFOD {
 
     public LLResultTypes.DetectorResult getSecondClosestPurple() {
         return purpleDetections.size() < 2 ? null : purpleDetections.get(1);
+    }
+
+    public LLResultTypes.DetectorResult getClosestTarget() {
+        LLResultTypes.DetectorResult closestGreen = getClosestGreen();
+        LLResultTypes.DetectorResult closestPurple = getClosestPurple();
+
+        if (closestGreen == null && closestPurple != null) {
+            return closestPurple;
+        }
+        if (closestPurple == null && closestGreen != null) {
+            return closestGreen;
+        }
+        if (closestGreen == null && closestPurple == null) {
+            return null;
+        }
+
+        if (closestGreen.getTargetYDegrees() > closestPurple.getTargetYDegrees()) {
+            return closestGreen;
+        } else {
+            return closestPurple;
+        }
     }
 
     public LLStatus getStatus() {
