@@ -17,10 +17,14 @@ import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import static org.firstinspires.ftc.teamcode.pedroPathing.library.ObjectLib.*;
 import static org.firstinspires.ftc.teamcode.pedroPathing.library.StatesLib.*;
 
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import org.firstinspires.ftc.teamcode.pedroPathing.Models.Alliance;
 import org.firstinspires.ftc.teamcode.pedroPathing.Models.Target;
 import org.firstinspires.ftc.teamcode.pedroPathing.Services.IOStream;
+import org.firstinspires.ftc.teamcode.vision.EchoLapse.GoBildaPinpointDriver;
+import org.firstinspires.ftc.teamcode.vision.QuickScope.AprilTagLocalizer;
+import org.firstinspires.ftc.teamcode.vision.QuickScope.LaunchCalculator;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,6 +39,12 @@ public class CustomOpMode extends OpMode {
         Manager = TaskManager.getInstance();
         telemetryM = PanelsTelemetry.INSTANCE.getTelemetry();
         ioStream = new IOStream(hardwareMap.appContext);
+        calculator = new LaunchCalculator();
+        localizer = new AprilTagLocalizer(hardwareMap);
+        odo = hardwareMap.get(GoBildaPinpointDriver.class, "odo");
+        odo.setOffsets(85.0, -180.0, DistanceUnit.MM);
+        odo.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
+        odo.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.REVERSED, GoBildaPinpointDriver.EncoderDirection.FORWARD);
         if(Objects.equals(ioStream.getData("Alliance"), "Red")){
             alliance = Alliance.Red;
         }else{
@@ -46,8 +56,8 @@ public class CustomOpMode extends OpMode {
                 .addVelocityAction(Stop,0)
                 .addVelocityAction(Out,-1)
                 .build();
-        Shooter = new MotorEx.MotorBuilder("RightShooter",MotorType.goBILDA,1,0,false,hardwareMap,new PIDFCoefficients(0,0,0,0),null)
-                .addMotorWithVelPIDF("LeftShooter",false,new PIDFCoefficients(0,0,0,0))
+        Shooter = new MotorEx.MotorBuilder("RightShooter",MotorType.goBILDA,1,0,true,hardwareMap,null,null)
+                .addMotorWithVelPIDF("LeftShooter",true,null)
                 .addVelocityAction(Armed,2)
                 .build();
         Inhale = new MotorEx.MotorBuilder("InhaleMotor",MotorType.goBILDA,5.2,0,false,hardwareMap)
@@ -56,17 +66,31 @@ public class CustomOpMode extends OpMode {
                 .addVelocityAction(Out,-1)
                 .build();
         ClassifyServo = new ServoBuilders.NormalCRServoBuilder("ClassifyServo", Stop,0,false,0.09,hardwareMap)
-                .addAction(Purple,1)
-                .addAction(Green,0)
                 .build();
-        LeftBoard = new ServoBuilders.PWMServoBuilder("LeftBoard",0,false,hardwareMap)
-                .addAction(Lock,0.8)
-                .addAction(Shoot,0.5)
-                .addAction(Back,0)
+
+        LeftBoard = new ServoBuilders.PWMServoBuilder("LeftBoard",Lock,0.58,false,hardwareMap)
+                .addAction(Shoot,0.795)
+                .addAction(Back,0.97)
                 .build();
+
+        RightBoard = new ServoBuilders.PWMServoBuilder("RightBoard",Lock,0.85,false,hardwareMap)
+                .addAction(Shoot,0.65)
+                .addAction(Back,0.4)
+                .build();
+
+        PitchServo = new ServoBuilders.PWMServoBuilder("RightPitch",Up,1,true,hardwareMap)
+                .addServo("LeftPitch",false)
+                .addAction(Down,1)
+                .build();
+
         switch (target){
             case TELEOP:
-
+                IntakeMotor.Init();
+                Inhale.Init();
+                Shooter.Init();
+                LeftBoard.act(Lock);
+                RightBoard.act(Lock);
+                PitchServo.act(Up);
                 break;
             case AUTONOMOUS:
 
@@ -82,6 +106,7 @@ public class CustomOpMode extends OpMode {
     public void loop(){
         gamepad.update();
         telemetryM.update();
+        follower.update();
         switch (target){
             case TELEOP:
                 double coefficient = gamepad.left_trigger.PressPosition();

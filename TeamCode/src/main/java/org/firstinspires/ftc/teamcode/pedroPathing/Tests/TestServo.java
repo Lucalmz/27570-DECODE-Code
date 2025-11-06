@@ -15,7 +15,7 @@ public class TestServo extends CustomOpMode {
 
     public void init(){
         super.init();
-        servo = new ServoBuilders.PWMServoBuilder("TestServo",0.5,false,hardwareMap)
+        servo = new ServoBuilders.PWMServoBuilder("LeftBoard",0.5,false,hardwareMap)
                 .build();
         servo.Init();
     }

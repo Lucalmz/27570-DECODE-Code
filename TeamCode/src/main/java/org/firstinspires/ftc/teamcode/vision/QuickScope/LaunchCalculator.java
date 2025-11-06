@@ -3,12 +3,13 @@ package org.firstinspires.ftc.teamcode.vision.QuickScope;
 import static java.lang.Math.abs;
 import static java.lang.Math.atan2;
 import static java.lang.Math.cos;
-import static java.lang.Math.pow;
 import static java.lang.Math.sin;
 import static java.lang.Math.sqrt;
 import static java.lang.Math.tan;
 import static java.lang.Math.toDegrees;
 import static java.lang.Math.toRadians;
+
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * 核心计算类，负责根据物理模型找到最佳发射方案。
@@ -32,10 +33,12 @@ public class LaunchCalculator {
     public static final double HIT_TOLERANCE_M = 0.055;            // 命中容差 (米)
     public static final double TIME_STEP_S = 0.006;                // 物理模拟的时间步长 (秒)
 
-    public static final double MOTOR_RPM_LOSS_FACTOR_PERCENT = 55.0; // 估算电机RPM时的损耗因子 (%)
+    public static final double MOTOR_RPM_LOSS_FACTOR_PERCENT = 0; // 估算电机RPM时的损耗因子 (%)
     public static final double FRICTION_WHEEL_DIAMETER_M = 0.072;    // 摩擦轮直径 (米)
 
     private volatile boolean isCalculating = false;
+    private ReentrantLock lock = new ReentrantLock();
+
     private volatile LaunchSolution lastSolution = LaunchSolution.NO_SOLUTION;
     private volatile boolean newSolutionAvailable = false;
 
@@ -53,20 +56,21 @@ public class LaunchCalculator {
     }
 
     public void calculateAsync(LaunchParameters params) {
-        if (isCalculating) return;
-
-        new Thread(() -> {
+        lock.lock();
+        try{
             isCalculating = true;
             lastSolution = findLaunchSolution(params);
             newSolutionAvailable = true;
             isCalculating = false;
-        }).start();
+        }finally {
+            lock.unlock();
+        }
     }
 
-    public double calculateMotorRpm(double velocityMs) {
+    public double calculateMotorRps(double velocityMs) {
         if (velocityMs <= 0) return 0;
-        double theoreticalRpm = (velocityMs * 60.0) / (Math.PI * FRICTION_WHEEL_DIAMETER_M);
-        return theoreticalRpm * (1.0 + MOTOR_RPM_LOSS_FACTOR_PERCENT / 100.0);
+        double theoreticalRps = velocityMs/ (Math.PI * FRICTION_WHEEL_DIAMETER_M);
+        return theoreticalRps * (1.0 + MOTOR_RPM_LOSS_FACTOR_PERCENT);
     }
 
     public static class LaunchParameters {

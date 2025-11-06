@@ -18,6 +18,21 @@ public class BallsInQueue {
         }
         return INSTANCE;
     }
+    public synchronized boolean isPurpleBallAvailable() {
+        return PurpleBalls.get() > 0;
+    }
+    public synchronized boolean isGreenBallAvailable() {
+        return GreenBalls.get() > 0;
+    }
+    public synchronized boolean isFull() {
+        return PurpleBalls.get()+GreenBalls.get() >= 3;
+    }
+    public synchronized boolean notFull(){
+        return PurpleBalls.get()+GreenBalls.get() < 3;
+    }
+    public synchronized boolean isEmpty() {
+        return PurpleBalls.get() == 0 && GreenBalls.get() == 0;
+    }
 
     public synchronized void AddPurpleBall() {
         PurpleBalls.addAndGet(1);

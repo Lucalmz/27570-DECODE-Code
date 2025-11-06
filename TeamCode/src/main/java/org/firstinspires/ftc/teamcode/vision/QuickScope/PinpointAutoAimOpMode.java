@@ -110,7 +110,7 @@ public class PinpointAutoAimOpMode extends LinearOpMode {
             telemetry.addData("俯仰角 (Pitch)", String.format(Locale.US, "%.2f°", latestSolution.launcherPitch));
             telemetry.addData("绝对航向角 (Azimuth)", String.format(Locale.US, "%.2f°", latestSolution.aimAzimuth));
             telemetry.addData("发射速度", String.format(Locale.US, "%.2f m/s", latestSolution.launcherVelocity));
-            telemetry.addData("估算RPM", String.format(Locale.US, "%.0f", calculator.calculateMotorRpm(latestSolution.launcherVelocity)));
+            telemetry.addData("估算RPM", String.format(Locale.US, "%.0f", calculator.calculateMotorRps(latestSolution.launcherVelocity)));
         } else {
             telemetry.addData("\n--- 发射方案 [无效] ---", "");
             telemetry.addData("提示", "当前位置无解或未计算");
