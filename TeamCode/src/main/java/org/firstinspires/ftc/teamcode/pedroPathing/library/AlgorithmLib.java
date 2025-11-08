@@ -73,7 +73,7 @@ public class AlgorithmLib {
         return null;
     }
     public static Runnable ShootAll(){
-        Inhale.act(Action.PullIn);
+        Inhale.VelocityAct(Action.PullIn);
         LeftBoard.act(Action.Shoot);
         RightBoard.act(Action.Shoot);
         try {

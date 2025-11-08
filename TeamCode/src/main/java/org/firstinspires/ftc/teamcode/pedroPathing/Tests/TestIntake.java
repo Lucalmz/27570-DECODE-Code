@@ -21,7 +21,7 @@ import org.firstinspires.ftc.teamcode.pedroPathing.Models.Target;
 import org.firstinspires.ftc.teamcode.pedroPathing.library.CustomOpMode;
 
 @TeleOp
-public class TestShooter extends CustomOpMode {
+public class TestIntake extends CustomOpMode {
     private double Value = 0;
     private static final double VELOCITY = 0;
 
@@ -34,12 +34,10 @@ public class TestShooter extends CustomOpMode {
         Value += gamepad.left_trigger.PressPosition()*0.1;
         Value -= gamepad.right_trigger.PressPosition()*0.1;
 
-        Shooter.setVelocity(Value);
-        telemetry.addData("Velocity 1",Shooter.getOneVelocity(0));
-        telemetry.addData("Velocity 2",Shooter.getOneVelocity(1));
-        telemetry.addData("Average Velocity",Shooter.getVelocity());
+        Inhale.setVelocity(Value);
+        telemetry.addData("Velocity",Inhale.getVelocity());
         telemetry.addData("Applied velocity",Value);
-        telemetry.addData("Tick_Per_Round",Shooter.getTick_per_round());
+        telemetry.addData("Tick_Per_Round",Inhale.getTick_per_round());
         telemetry.addData("Status", "Running");
         telemetry.update();
     }

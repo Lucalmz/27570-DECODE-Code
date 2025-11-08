@@ -4,14 +4,18 @@ import static com.bear27570.yuan.BotFactory.Model.Action.*;
 
 import com.bear27570.yuan.AdvantageCoreLib.Logging.Logger;
 import com.bear27570.yuan.BotFactory.Gamepad.GamepadEx;
+import com.bear27570.yuan.BotFactory.Interface.Lockable;
 import com.bear27570.yuan.BotFactory.Interface.PeriodicRunnable;
 import com.bear27570.yuan.BotFactory.Model.Action;
 import com.bear27570.yuan.BotFactory.Model.MotorType;
+import com.bear27570.yuan.BotFactory.Model.VirtualLock;
 import com.bear27570.yuan.BotFactory.Motor.MotorEx;
 import com.bear27570.yuan.BotFactory.Servo.ServoBuilders;
 import com.bear27570.yuan.BotFactory.ThreadManagement.TaskManager;
 import com.bylazar.telemetry.PanelsTelemetry;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 
 import static org.firstinspires.ftc.teamcode.pedroPathing.library.ObjectLib.*;
@@ -20,6 +24,7 @@ import static org.firstinspires.ftc.teamcode.pedroPathing.library.StatesLib.*;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import org.firstinspires.ftc.teamcode.pedroPathing.Models.Alliance;
+import org.firstinspires.ftc.teamcode.pedroPathing.Models.Mode;
 import org.firstinspires.ftc.teamcode.pedroPathing.Models.Target;
 import org.firstinspires.ftc.teamcode.pedroPathing.Services.IOStream;
 import org.firstinspires.ftc.teamcode.vision.EchoLapse.GoBildaPinpointDriver;
@@ -32,6 +37,7 @@ import java.util.Objects;
 
 public class CustomOpMode extends OpMode {
     private final List<PeriodicRunnable> periodicList = new ArrayList<>();
+    private double[] assistCoefficients = {0.0,0.0};
     public void init(){
         Logger.initialize(false,System::nanoTime);
         follower = Constants.createFollower(hardwareMap);
@@ -41,6 +47,10 @@ public class CustomOpMode extends OpMode {
         ioStream = new IOStream(hardwareMap.appContext);
         calculator = new LaunchCalculator();
         localizer = new AprilTagLocalizer(hardwareMap);
+        gamepadRumbleLock = new VirtualLock("gamepadRumbleLock");
+        calculatorLock = new VirtualLock("calculatorLock");
+        DeadeyeLock = new VirtualLock("DeadeyeLock");
+        IntakeMotorLock = new VirtualLock("IntakeMotorLock");
         odo = hardwareMap.get(GoBildaPinpointDriver.class, "odo");
         odo.setOffsets(85.0, -180.0, DistanceUnit.MM);
         odo.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
@@ -51,21 +61,19 @@ public class CustomOpMode extends OpMode {
             alliance = Alliance.Blue;
         }
         logger = Logger.getINSTANCE();
-        IntakeMotor = new MotorEx.MotorBuilder("IntakeMotor", MotorType.goBILDA,5.2,0,false,hardwareMap)
-                .addVelocityAction(PullIn,1)
-                .addVelocityAction(Stop,0)
-                .addVelocityAction(Out,-1)
-                .build();
+        IntakeMotor = hardwareMap.get(DcMotor.class,"IntakeMotor");
         Shooter = new MotorEx.MotorBuilder("RightShooter",MotorType.goBILDA,1,0,true,hardwareMap,null,null)
                 .addMotorWithVelPIDF("LeftShooter",true,null)
-                .addVelocityAction(Armed,2)
+                .addVelocityAction(Armed,7)
                 .build();
         Inhale = new MotorEx.MotorBuilder("InhaleMotor",MotorType.goBILDA,5.2,0,false,hardwareMap)
-                .addVelocityAction(PullIn,1)
+                .addVelocityAction(PullIn,6)
                 .addVelocityAction(Stop,0)
-                .addVelocityAction(Out,-1)
+                .addVelocityAction(Out,-6)
                 .build();
-        ClassifyServo = new ServoBuilders.NormalCRServoBuilder("ClassifyServo", Stop,0,false,0.09,hardwareMap)
+        ClassifyServo = new ServoBuilders.CRServoBuilder("ClassifyServo", Stop,0,false,hardwareMap)
+                .addAction(Purple,-1)
+                .addAction(Green,1)
                 .build();
 
         LeftBoard = new ServoBuilders.PWMServoBuilder("LeftBoard",Lock,0.58,false,hardwareMap)
@@ -82,10 +90,10 @@ public class CustomOpMode extends OpMode {
                 .addServo("LeftPitch",false)
                 .addAction(Down,1)
                 .build();
-
         switch (target){
             case TELEOP:
-                IntakeMotor.Init();
+                mode = Mode.IntakeMode;
+                IntakeMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
                 Inhale.Init();
                 Shooter.Init();
                 LeftBoard.act(Lock);
@@ -98,7 +106,6 @@ public class CustomOpMode extends OpMode {
         }
     }
     public void init_loop(){
-
     }
     public void start(){
         ioStream.saveData("Alliance",alliance.toString());
@@ -107,23 +114,48 @@ public class CustomOpMode extends OpMode {
         gamepad.update();
         telemetryM.update();
         follower.update();
+        odo.update();
         switch (target){
             case TELEOP:
                 double coefficient = gamepad.left_trigger.PressPosition();
-                if(coefficient>0.95){
-                    follower.holdPoint(follower.getPose());
-                    return;
+                if(mode == Mode.IntakeMode) {
+                    double forward = (-gamepad.left_stick_y.PressPosition())*(1-ConstantLib.ASSISTANT_STRENGTH)+assistCoefficients[0]*ConstantLib.ASSISTANT_STRENGTH;
+                    double strafe = (-gamepad.left_stick_x.PressPosition())*(1-ConstantLib.ASSISTANT_STRENGTH)+assistCoefficients[1]*ConstantLib.ASSISTANT_STRENGTH;
+                    if (coefficient > 0.95) {
+                        if(follower.isTeleopDrive())
+                            follower.breakFollowing();
+                        follower.holdPoint(follower.getPose());
+                        return;
+                    }
+                    if (!follower.isTeleopDrive()) {
+                        follower.startTeleOpDrive();
+                    }
+                    if (coefficient < 0.05) {
+                        follower.setTeleOpDrive(Math.pow(forward, 3), Math.pow(strafe, 3), Math.pow(-gamepad.right_stick_x.PressPosition(), 3), true);
+                        return;
+                    }
+                    follower.setTeleOpDrive(Math.pow(forward, 3) * (1 - coefficient), Math.pow(strafe, 3) * (1 - coefficient), Math.pow(-gamepad.right_stick_x.PressPosition(), 3) * (1 - coefficient), true);
+                    break;
                 }
-                if(coefficient<0.05){
-                    follower.startTeleopDrive(false);
-                    follower.setTeleOpDrive(Math.pow(gamepad.left_stick_y.PressPosition(),3),Math.pow(gamepad.left_stick_x.PressPosition(),3),Math.pow(gamepad.right_stick_x.PressPosition(),3),true);
-                    return;
+                if(mode == Mode.ShootingMode){
+                    if (coefficient > 0.95) {
+                        if(follower.isHybridDriveRunning())
+                            follower.breakFollowing();
+                        follower.holdPoint(follower.getPose());
+                        return;
+                    }
+                    if (!follower.isHybridDriveRunning()) {
+                        follower.startHybridDrive(calculator.getSolution().launcherPitch);
+                    }
+                    if (coefficient < 0.05) {
+                        follower.setHybridDriveInputs(Math.pow(-gamepad.left_stick_y.PressPosition(), 3), Math.pow(-gamepad.left_stick_x.PressPosition(), 3), Math.toRadians(calculator.getSolution().aimAzimuth-180));
+                        return;
+                    }
+                    follower.setHybridDriveInputs(Math.pow(-gamepad.left_stick_y.PressPosition()*coefficient, 3), Math.pow(-gamepad.left_stick_x.PressPosition()*coefficient, 3), Math.toRadians(calculator.getSolution().aimAzimuth-180));
+                    break;
                 }
-                follower.startTeleopDrive(false);
-                follower.setTeleOpDrive(Math.pow(gamepad.left_stick_y.PressPosition(),3)*(1-coefficient),Math.pow(gamepad.left_stick_x.PressPosition(),3)*(1-coefficient),Math.pow(gamepad.right_stick_x.PressPosition(),3)*(1-coefficient),true);
-                break;
-            case AUTONOMOUS:
-                break;
+                case AUTONOMOUS:
+                        break;
         }
     }
     public void stop(){

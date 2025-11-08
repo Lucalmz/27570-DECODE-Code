@@ -5,11 +5,13 @@ import com.bear27570.yuan.BotFactory.Gamepad.GamepadEx;
 import com.bear27570.yuan.BotFactory.Interface.Lockable;
 import com.bear27570.yuan.BotFactory.Interface.ServoEx;
 import com.bear27570.yuan.BotFactory.Motor.MotorEx;
+import com.bear27570.yuan.BotFactory.Servo.CRServoEx;
 import com.bear27570.yuan.BotFactory.ThreadManagement.TaskManager;
 import com.bylazar.telemetry.TelemetryManager;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.math.MathFunctions;
 import com.pedropathing.paths.HeadingInterpolator;
+import com.qualcomm.robotcore.hardware.DcMotor;
 
 import org.firstinspires.ftc.teamcode.pedroPathing.Services.IOStream;
 import org.firstinspires.ftc.teamcode.vision.EchoLapse.GoBildaPinpointDriver;
@@ -18,9 +20,9 @@ import org.firstinspires.ftc.teamcode.vision.QuickScope.LaunchCalculator;
 
 public class ObjectLib {
     public static MotorEx Shooter;
-    public static MotorEx IntakeMotor;
+    public static DcMotor IntakeMotor;
     public static MotorEx Inhale;
-    public static ServoEx ClassifyServo;
+    public static CRServoEx ClassifyServo;
     public static ServoEx PitchServo;
     public static ServoEx LeftBoard;
     public static ServoEx RightBoard;
@@ -33,7 +35,7 @@ public class ObjectLib {
     public static LaunchCalculator calculator;
     public static AprilTagLocalizer localizer;
     public static GoBildaPinpointDriver odo;
-    public static Lockable gamepadRumbleLock,calculatorLock;
+    public static Lockable gamepadRumbleLock,calculatorLock,DeadeyeLock,IntakeMotorLock;
     /*public static HeadingInterpolator VisionCalculatedHeading = closestPoint ->
             MathFunctions.normalizeAngle(Math.toRadians(90));*/
     private ObjectLib (){}
