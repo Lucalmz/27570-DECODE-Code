@@ -20,6 +20,7 @@ import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 
 import static org.firstinspires.ftc.teamcode.pedroPathing.library.ObjectLib.*;
 import static org.firstinspires.ftc.teamcode.pedroPathing.library.StatesLib.*;
+import static org.firstinspires.ftc.teamcode.pedroPathing.library.ConstantLib.*;
 
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
@@ -29,7 +30,6 @@ import org.firstinspires.ftc.teamcode.pedroPathing.Models.Target;
 import org.firstinspires.ftc.teamcode.pedroPathing.Services.IOStream;
 import org.firstinspires.ftc.teamcode.vision.EchoLapse.GoBildaPinpointDriver;
 import org.firstinspires.ftc.teamcode.vision.QuickScope.AprilTagLocalizer;
-import org.firstinspires.ftc.teamcode.vision.QuickScope.LaunchCalculator;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -45,7 +45,6 @@ public class CustomOpMode extends OpMode {
         Manager = TaskManager.getInstance();
         telemetryM = PanelsTelemetry.INSTANCE.getTelemetry();
         ioStream = new IOStream(hardwareMap.appContext);
-        calculator = new LaunchCalculator();
         localizer = new AprilTagLocalizer(hardwareMap);
         gamepadRumbleLock = new VirtualLock("gamepadRumbleLock");
         calculatorLock = new VirtualLock("calculatorLock");
@@ -62,11 +61,11 @@ public class CustomOpMode extends OpMode {
         }
         logger = Logger.getINSTANCE();
         IntakeMotor = hardwareMap.get(DcMotor.class,"IntakeMotor");
-        Shooter = new MotorEx.MotorBuilder("RightShooter",MotorType.goBILDA,1,0,true,hardwareMap,null,null)
-                .addMotorWithVelPIDF("LeftShooter",true,null)
+        Shooter = new MotorEx.MotorBuilder("RightShooter",MotorType.goBILDA,1,0,true,hardwareMap,new PIDFCoefficients(180,0,20,15.85),null)
+                .addMotorWithVelPIDF("LeftShooter",true,new PIDFCoefficients(160,0,90,18))
                 .addVelocityAction(Armed,7)
                 .build();
-        Inhale = new MotorEx.MotorBuilder("InhaleMotor",MotorType.goBILDA,5.2,0,false,hardwareMap)
+        Inhale = new MotorEx.MotorBuilder("InhaleMotor",MotorType.goBILDA,5.2,0,false,hardwareMap,new PIDFCoefficients(17,3,8,13),null)
                 .addVelocityAction(PullIn,6)
                 .addVelocityAction(Stop,0)
                 .addVelocityAction(Out,-6)
@@ -76,12 +75,12 @@ public class CustomOpMode extends OpMode {
                 .addAction(Green,1)
                 .build();
 
-        LeftBoard = new ServoBuilders.PWMServoBuilder("LeftBoard",Lock,0.58,false,hardwareMap)
+        LeftBoard = new ServoBuilders.PWMServoBuilder("LeftBoard",Lock,0.45,false,hardwareMap)
                 .addAction(Shoot,0.795)
                 .addAction(Back,0.97)
                 .build();
 
-        RightBoard = new ServoBuilders.PWMServoBuilder("RightBoard",Lock,0.85,false,hardwareMap)
+        RightBoard = new ServoBuilders.PWMServoBuilder("RightBoard",Lock,0.98,false,hardwareMap)
                 .addAction(Shoot,0.65)
                 .addAction(Back,0.4)
                 .build();
@@ -118,7 +117,7 @@ public class CustomOpMode extends OpMode {
         switch (target){
             case TELEOP:
                 double coefficient = gamepad.left_trigger.PressPosition();
-                if(mode == Mode.IntakeMode) {
+                if(mode == Mode.IntakeMode||mode==Mode.Manual_Shooting) {
                     double forward = (-gamepad.left_stick_y.PressPosition())*(1-ConstantLib.ASSISTANT_STRENGTH)+assistCoefficients[0]*ConstantLib.ASSISTANT_STRENGTH;
                     double strafe = (-gamepad.left_stick_x.PressPosition())*(1-ConstantLib.ASSISTANT_STRENGTH)+assistCoefficients[1]*ConstantLib.ASSISTANT_STRENGTH;
                     if (coefficient > 0.95) {
@@ -145,13 +144,13 @@ public class CustomOpMode extends OpMode {
                         return;
                     }
                     if (!follower.isHybridDriveRunning()) {
-                        follower.startHybridDrive(calculator.getSolution().launcherPitch);
+                        //follower.startHybridDrive(calculator.getSolution().aimAzimuth+90);
                     }
                     if (coefficient < 0.05) {
-                        follower.setHybridDriveInputs(Math.pow(-gamepad.left_stick_y.PressPosition(), 3), Math.pow(-gamepad.left_stick_x.PressPosition(), 3), Math.toRadians(calculator.getSolution().aimAzimuth-180));
+                        //follower.setHybridDriveInputs(Math.pow(-gamepad.left_stick_y.PressPosition(), 3), Math.pow(-gamepad.left_stick_x.PressPosition(), 3), Math.toRadians(calculator.getSolution().aimAzimuth+90));
                         return;
                     }
-                    follower.setHybridDriveInputs(Math.pow(-gamepad.left_stick_y.PressPosition()*coefficient, 3), Math.pow(-gamepad.left_stick_x.PressPosition()*coefficient, 3), Math.toRadians(calculator.getSolution().aimAzimuth-180));
+                    //follower.setHybridDriveInputs(Math.pow(-gamepad.left_stick_y.PressPosition()*coefficient, 3), Math.pow(-gamepad.left_stick_x.PressPosition()*coefficient, 3), Math.toRadians(calculator.getSolution().aimAzimuth+90));
                     break;
                 }
                 case AUTONOMOUS:

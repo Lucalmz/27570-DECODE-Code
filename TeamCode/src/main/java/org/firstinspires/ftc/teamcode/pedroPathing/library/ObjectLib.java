@@ -16,7 +16,9 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import org.firstinspires.ftc.teamcode.pedroPathing.Services.IOStream;
 import org.firstinspires.ftc.teamcode.vision.EchoLapse.GoBildaPinpointDriver;
 import org.firstinspires.ftc.teamcode.vision.QuickScope.AprilTagLocalizer;
-import org.firstinspires.ftc.teamcode.vision.QuickScope.LaunchCalculator;
+import org.firstinspires.ftc.teamcode.vision.QuickScope.LaunchSolution;
+
+import java.util.concurrent.atomic.AtomicReference;
 
 public class ObjectLib {
     public static MotorEx Shooter;
@@ -32,7 +34,7 @@ public class ObjectLib {
     public static TaskManager Manager;
     public static Follower follower;
     public static TelemetryManager telemetryM;
-    public static LaunchCalculator calculator;
+   // public static LaunchCalculator calculator;
     public static AprilTagLocalizer localizer;
     public static GoBildaPinpointDriver odo;
     public static Lockable gamepadRumbleLock,calculatorLock,DeadeyeLock,IntakeMotorLock;

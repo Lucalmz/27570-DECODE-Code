@@ -20,8 +20,9 @@ import java.util.List;
  * 此版本包含了将AprilTag默认的“中心原点”坐标系转换为我们期望的“左下角原点”坐标系的关键逻辑。
  */
 public class AprilTagLocalizer {
-    private static final Position cameraPosition = new Position(DistanceUnit.CM, 17, 15, 15.8, 0);
-    private static final YawPitchRollAngles cameraOrientation = new YawPitchRollAngles(AngleUnit.DEGREES, 180, -57, 90, 0);
+    private static final Position cameraPosition = new Position(DistanceUnit.CM,
+            17, -16.5, 14.5, 0);
+    private static final YawPitchRollAngles cameraOrientation = new YawPitchRollAngles(AngleUnit.DEGREES, 0, -47, -90, 0);
 
     private AprilTagProcessor aprilTag;
     private VisionPortal visionPortal;

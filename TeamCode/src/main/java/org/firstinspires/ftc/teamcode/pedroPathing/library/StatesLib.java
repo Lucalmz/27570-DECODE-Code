@@ -7,11 +7,13 @@ import org.firstinspires.ftc.teamcode.pedroPathing.Models.Mode;
 import org.firstinspires.ftc.teamcode.pedroPathing.Models.Target;
 import org.firstinspires.ftc.teamcode.vision.QuickScope.LaunchSolution;
 
+import java.util.concurrent.atomic.AtomicReference;
+
 public class StatesLib {
     public static Target target = Target.TELEOP;
     public static Alliance alliance = Alliance.Red;
     public static BallsInQueue balls = BallsInQueue.getInstance();
-    public static LaunchSolution latestSolution;
+    public static AtomicReference<LaunchSolution> latestSolution;
     public static Mode mode;
     public static Pose2D currentPose;
 }

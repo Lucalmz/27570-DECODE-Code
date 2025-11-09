@@ -5,84 +5,79 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
-import org.firstinspires.ftc.robotcore.external.navigation.UnnormalizedAngleUnit;
 
 import java.util.Locale;
 
-@TeleOp(name="goBILDA Pinpoint 示例", group="Linear OpMode")
-
+@TeleOp(name="使用接口的goBILDA Pinpoint示例", group="Linear OpMode")
 public class SensorGoBildaPinpointExample extends LinearOpMode {
 
-    GoBildaPinpointDriver odo;
-
-    double oldTime = 0;
-
+    private IPoseProvider poseProvider;
+    private double oldTime = 0;
 
     @Override
     public void runOpMode() {
-
-        odo = hardwareMap.get(GoBildaPinpointDriver.class,"odo");
-
-        /*
-        设置里程计模块相对于里程计计算机追踪中心的相对位置。
-        X 轴模块偏移量指的是 X 轴（前进方向）里程计模块与追踪中心的横向距离。
-        中心点左侧为正数，右侧为负数。
-        Y 轴模块偏移量指的是 Y 轴（侧移方向）里程计模块与追踪中心的前后距离。
-        中心点前方为正数，后方为负数。
-         */
-        odo.setOffsets(85.0, -180.0, DistanceUnit.MM);
-
-        odo.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
-
-
-        /*
-        设置两个里程计模块的计数方向。
-        当机器人向前移动时，X 轴（前进方向）模块的读数应该增加。
-        当机器人向左侧移时，Y 轴（侧移方向）模块的读数应该增加。
-         */
-        odo.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.REVERSED, GoBildaPinpointDriver.EncoderDirection.REVERSED );
-
-        odo.resetPosAndIMU();
+        PinpointPoseProvider pinpoint = new PinpointPoseProvider(hardwareMap, "odo");
+        pinpoint.initialize();
+        poseProvider = pinpoint;
 
         telemetry.addData("Status", "Initialized");
-        telemetry.addData("X 偏移量", odo.getXOffset(DistanceUnit.MM));
-        telemetry.addData("Y 偏移量", odo.getYOffset(DistanceUnit.MM));
-        telemetry.addData("设备版本号:", odo.getDeviceVersion());
-        telemetry.addData("航向角缩放因子", odo.getYawScalar());
+        telemetry.addData("说明", "坐标系已设置为标准笛卡尔坐标系");
+        telemetry.addData("说明", "Y轴: 前方为正, X轴: 右侧为正");
         telemetry.update();
 
         waitForStart();
         resetRuntime();
 
         while (opModeIsActive()) {
-            odo.update();
+            // 2. 在循环开始时更新数据
+            poseProvider.update();
 
+            // 3. 使用接口中的方法获取位移和速度
+            // 现在外部程序可以非常轻松地通过调用这些方法来获取所需数据
+            double cartesianX_mm = -poseProvider.getX(DistanceUnit.MM);
+            double cartesianY_mm = poseProvider.getY(DistanceUnit.MM);
+            double cartesianHeading_deg = poseProvider.getHeading(AngleUnit.DEGREES);
+
+            double cartesianVelX_mm_s = -poseProvider.getXVelocity(DistanceUnit.MM);
+            double cartesianVelY_mm_s = poseProvider.getYVelocity(DistanceUnit.MM);
+            double headingVel_deg_s = poseProvider.getHeadingVelocity(AngleUnit.DEGREES);
+
+            // 处理手柄输入
             if (gamepad1.a){
-                odo.resetPosAndIMU();
+                poseProvider.reset();
+            }
+            if (gamepad1.b && poseProvider instanceof PinpointPoseProvider){
+                // 如果需要调用Pinpoint特有的方法，可以进行类型转换
+                ((PinpointPoseProvider) poseProvider).recalibrateIMU();
             }
 
-            if (gamepad1.b){
-                odo.recalibrateIMU();
-            }
+            // --- 以下是遥测数据显示，与核心逻辑分离 ---
+
+            String positionData = String.format(Locale.US, "{X: %.2f mm, Y: %.2f mm, H: %.2f deg}",
+                    cartesianX_mm,
+                    cartesianY_mm,
+                    cartesianHeading_deg
+            );
+            telemetry.addData("笛卡尔坐标 (位置)", positionData);
+
+
+            String velocityData = String.format(Locale.US,"{XVel: %.2f mm/s, YVel: %.2f mm/s, HVel: %.2f deg/s}",
+                    cartesianVelX_mm_s,
+                    cartesianVelY_mm_s,
+                    headingVel_deg_s
+            );
+            telemetry.addData("笛卡尔坐标 (速度)", velocityData);
+
+
+            telemetry.addData("状态", poseProvider.getDeviceStatus());
+            telemetry.addData("Pinpoint 频率", String.format(Locale.US, "%.2f Hz", poseProvider.getUpdateFrequency()));
+
             double newTime = getRuntime();
-            double loopTime = newTime-oldTime;
-            double frequency = 1/loopTime;
+            double loopTime = newTime - oldTime;
+            double frequency = (loopTime > 0) ? 1.0 / loopTime : 0;
             oldTime = newTime;
-
-            Pose2D pos = odo.getPosition();
-            String data = String.format(Locale.US, "{X: %.3f, Y: %.3f, H: %.3f}", pos.getX(DistanceUnit.MM), pos.getY(DistanceUnit.MM), pos.getHeading(AngleUnit.DEGREES));
-            telemetry.addData("位置", data);
-
-            /*
-            获取机器人的当前速度（x 和 y 单位为毫米/秒，航向角速度单位为度/秒），并将其打印出来。
-             */
-            String velocity = String.format(Locale.US,"{XVel: %.3f, YVel: %.3f, HVel: %.3f}", odo.getVelX(DistanceUnit.MM), odo.getVelY(DistanceUnit.MM), odo.getHeadingVelocity(UnnormalizedAngleUnit.DEGREES));
-
-            telemetry.addData("速度", velocity);
-            telemetry.addData("状态", odo.getDeviceStatus());
-            telemetry.addData("Pinpoint 频率", odo.getFrequency());
-            telemetry.addData("REV Hub 频率: ", frequency);
+            telemetry.addData("REV Hub 频率: ", String.format(Locale.US, "%.2f Hz", frequency));
             telemetry.update();
         }
-    }}
+    }
+}
