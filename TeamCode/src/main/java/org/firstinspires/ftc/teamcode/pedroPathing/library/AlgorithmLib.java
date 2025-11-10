@@ -19,13 +19,6 @@ import org.firstinspires.ftc.teamcode.vision.QuickScope.LaunchSolution;
 
 public class AlgorithmLib {
     private static Pose2D currentTarget;
-    public static Runnable Aim(LaunchSolution solution){
-        if(solution == null){
-            return null;
-        }
-
-        return null;
-    }
     public static Runnable ShootGreen(){
         Inhale.moveDistance(SHOOT_ONE_BALL_DIST,0.8);
         RightBoard.act(Action.Shoot);
@@ -82,6 +75,7 @@ public class AlgorithmLib {
         return null;
     }
     public static void getNewLaunch() throws Exception {
+        pinpointPoseProvider.update();
         double robotX_cm = -pinpointPoseProvider.getX(DistanceUnit.CM);
         double robotY_cm = pinpointPoseProvider.getY(DistanceUnit.CM);
 

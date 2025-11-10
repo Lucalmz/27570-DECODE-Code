@@ -53,7 +53,6 @@ public class CustomOpMode extends OpMode {
         gamepadRumbleLock = new VirtualLock("gamepadRumbleLock");
         calculatorLock = new VirtualLock("calculatorLock");
         DeadeyeLock = new VirtualLock("DeadeyeLock");
-        IntakeMotorLock = new VirtualLock("IntakeMotorLock");
         deadeye = new Deadeye(hardwareMap);
         deadeye.start();
 
@@ -63,7 +62,11 @@ public class CustomOpMode extends OpMode {
             alliance = Alliance.Blue;
         }
         logger = Logger.getINSTANCE();
-        IntakeMotor = hardwareMap.get(DcMotor.class,"IntakeMotor");
+        IntakeMotor = new MotorEx.MotorBuilder("IntakeMotor",MotorType.goBILDA,5.2,0,true,hardwareMap,new PIDFCoefficients(150,10,30,25),null)
+                .addVelocityAction(PullIn,15)
+                .addVelocityAction(Stop,0)
+                .addVelocityAction(Out,-15)
+                .build();
         Shooter = new MotorEx.MotorBuilder("RightShooter",MotorType.goBILDA,1,0,true,hardwareMap,new PIDFCoefficients(180,0,20,15.85),null)
                 .addMotorWithVelPIDF("LeftShooter",true,new PIDFCoefficients(160,0,90,18))
                 .addVelocityAction(Armed,7)
@@ -90,7 +93,7 @@ public class CustomOpMode extends OpMode {
         switch (target){
             case TELEOP:
                 mode = Mode.IntakeMode;
-                IntakeMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+                IntakeMotor.Init();
                 Inhale.Init();
                 Shooter.Init();
                 LeftBoard.act(Lock);
@@ -153,7 +156,7 @@ public class CustomOpMode extends OpMode {
                     if (coefficient < 0.05) {
                         follower.updateTunerStyleHybridDrive(Math.pow(-gamepad.left_stick_y.PressPosition(), 3),
                                 Math.pow(-gamepad.left_stick_x.PressPosition(), 3),
-                                Math.toRadians(latestSolution.get().aimAzimuthDeg)
+                                Math.toRadians(latestSolution.get().aimAzimuthDeg-90)
                         );
                         return;
                     }

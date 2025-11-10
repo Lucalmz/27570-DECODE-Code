@@ -10,7 +10,7 @@ public class HybridTeleOpTest extends OpMode {
     Follower follower;
     public void init(){
         follower = Constants.createFollower(hardwareMap);
-        follower.startTeleopDrive();
+        follower.startTunerStyleHybridDrive();
     }
     public void loop(){
         follower.updateTunerStyleHybridDrive(gamepad1.left_stick_x,gamepad1.left_stick_y,0);

@@ -15,5 +15,5 @@ public class StatesLib {
     public static BallsInQueue balls = BallsInQueue.getInstance();
     public static volatile AtomicReference<LaunchSolution> latestSolution = new AtomicReference<>();
     public static Mode mode;
-    public static Pose2D currentPose;
+    public static volatile Pose2D currentPose;
 }

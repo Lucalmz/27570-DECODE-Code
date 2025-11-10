@@ -25,7 +25,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class ObjectLib {
     public static MotorEx Shooter;
-    public static DcMotor IntakeMotor;
+    public static MotorEx IntakeMotor;
     public static MotorEx Inhale;
     public static CRServoEx ClassifyServo;
     public static ServoEx PitchServo;
@@ -37,11 +37,11 @@ public class ObjectLib {
     public static TaskManager Manager;
     public static Follower follower;
     public static TelemetryManager telemetryM;
-    public static AprilTagLocalizer aprilTagLocalizer;
-    public static PinpointPoseProvider pinpointPoseProvider;
-    public static ArcherLogic archerLogic;
-    public static Deadeye deadeye;
-    public static Lockable gamepadRumbleLock,calculatorLock,DeadeyeLock,IntakeMotorLock;
+    public static volatile AprilTagLocalizer aprilTagLocalizer;
+    public static volatile PinpointPoseProvider pinpointPoseProvider;
+    public static volatile ArcherLogic archerLogic;
+    public static volatile Deadeye deadeye;
+    public static Lockable gamepadRumbleLock,calculatorLock,DeadeyeLock;
     /*public static HeadingInterpolator VisionCalculatedHeading = closestPoint ->
             MathFunctions.normalizeAngle(Math.toRadians(90));*/
     private ObjectLib (){}
