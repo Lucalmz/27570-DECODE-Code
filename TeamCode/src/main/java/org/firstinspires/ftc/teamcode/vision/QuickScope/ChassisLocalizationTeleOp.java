@@ -9,25 +9,15 @@ import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.teamcode.vision.EchoLapse.PinpointPoseProvider; // 确保路径正确
 
 import java.util.Locale;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.atomic.AtomicReference;
 
-@TeleOp(name = "Archer 自动瞄准系统 (V8.0)", group = "Main")
+@TeleOp(name = "Archer 自动瞄准系统 (V8.0 - 单线程阻塞版)", group = "Main")
 public class ChassisLocalizationTeleOp extends LinearOpMode {
 
     private AprilTagLocalizer aprilTagLocalizer;
     private PinpointPoseProvider pinpointPoseProvider;
 
-    // --- 新增: Archer计算相关 ---
+    // --- 修改: 移除了多线程相关的成员 ---
     private ArcherLogic archerLogic;
-    private Thread calculationThread;
-    // 使用线程安全的AtomicReference来存储最新的计算结果, 避免主线程和计算线程同时读写造成冲突
-    private final AtomicReference<LaunchSolution> latestSolution = new AtomicReference<>(null);
-    // 使用线程安全的队列来从主线程向计算线程传递参数
-    private final BlockingQueue<CalculationParams> calculationQueue = new ArrayBlockingQueue<>(1);
-    // --- Archer计算相关结束 ---
-
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -36,28 +26,8 @@ public class ChassisLocalizationTeleOp extends LinearOpMode {
         pinpointPoseProvider = new PinpointPoseProvider(hardwareMap, "odo");
         pinpointPoseProvider.initialize();
 
-        // --- 新增: 初始化Archer逻辑和后台线程 ---
-        // 这是至关重要的一步：将计算密集型任务放到后台线程。
-        // 这样可以防止主控制循环(while opModeIsActive)被阻塞，确保机器人手柄操作流畅。
+        // --- 修改: 只需初始化计算逻辑对象，无需创建线程 ---
         archerLogic = new ArcherLogic();
-        calculationThread = new Thread(() -> {
-            while (!Thread.currentThread().isInterrupted()) {
-                try {
-                    // take()方法会阻塞(等待)，直到队列中有新的参数可以取出
-                    CalculationParams params = calculationQueue.take();
-                    // 调用纯数学计算核心
-                    LaunchSolution solution = archerLogic.calculateSolution(params);
-                    // 将计算结果存放到线程安全的位置，供主线程读取
-                    latestSolution.set(solution);
-                } catch (InterruptedException e) {
-                    // 当OpMode结束时，我们会中断这个线程，这里是退出循环的逻辑
-                    Thread.currentThread().interrupt(); // 恢复中断状态
-                    break;
-                }
-            }
-        });
-        calculationThread.start(); // 启动后台计算线程
-        // --- 初始化结束 ---
 
         telemetry.addLine("初始化完成，请将机器人对准AprilTag");
         telemetry.addData("模式", "仅在开始时进行一次AprilTag校准");
@@ -79,8 +49,7 @@ public class ChassisLocalizationTeleOp extends LinearOpMode {
         }
 
         if (isStopRequested()) {
-            calculationThread.interrupt(); // 如果在初始化时就停止，确保线程被关闭
-            return;
+            return; // 如果在初始化时就停止，直接退出
         }
 
         // 3. 初始校准
@@ -108,7 +77,6 @@ public class ChassisLocalizationTeleOp extends LinearOpMode {
 
             // --- A. 获取机器人实时状态 (输入) ---
             pinpointPoseProvider.update();
-            // 场地总宽度为12英尺 = 365.76厘米. 将cm单位的坐标转换为(0.0 - 1.0)的归一化坐标
             double robotX_cm = -pinpointPoseProvider.getX(DistanceUnit.CM);
             double robotY_cm = pinpointPoseProvider.getY(DistanceUnit.CM);
 
@@ -122,9 +90,7 @@ public class ChassisLocalizationTeleOp extends LinearOpMode {
             double direction_deg = Math.toDegrees(direction_rad);
             if (direction_deg < 0) direction_deg += 360;
 
-
             // --- B. 获取手柄输入 ---
-            // 使用X键选择蓝色联盟，B键选择红色联盟
             if (gamepad1.x) {
                 targetAlliance = "Blue";
             }
@@ -136,11 +102,8 @@ public class ChassisLocalizationTeleOp extends LinearOpMode {
                 telemetry.addLine("里程计已手动重置为 (0,0,0)!");
             }
             // 您的底盘驾驶代码应该放在这里...
-            // double drive = -gamepad1.left_stick_y;
-            // ...
 
-
-            // --- C. 发送参数给计算核心 ---
+            // --- C & D. 直接进行阻塞式计算 ---
             // 将所有实时状态打包成一个对象
             CalculationParams currentParams = new CalculationParams(
                     normalizationX,
@@ -149,16 +112,12 @@ public class ChassisLocalizationTeleOp extends LinearOpMode {
                     direction_deg,
                     targetAlliance
             );
-            // 清空队列并放入最新的参数。这确保后台线程总是在处理最新的机器人状态，避免延迟。
-            calculationQueue.clear();
-            calculationQueue.offer(currentParams);
 
-
-            // --- D. 获取并使用计算结果 (输出) ---
-            LaunchSolution solution = latestSolution.get(); // 从线程安全区获取最新结果，这个操作极快，不会阻塞
+            // 直接调用计算方法。主循环会在此处暂停，直到计算完成。
+            LaunchSolution solution = archerLogic.calculateSolution(currentParams);
 
             // --- E. 遥测数据显示 ---
-            telemetry.addLine("--- Archer自动瞄准系统 ---");
+            telemetry.addLine("--- Archer自动瞄准系统 (单线程版) ---");
             telemetry.addData("当前目标", "%s Alliance (按X/B切换)", targetAlliance);
 
             if (solution != null) {
@@ -168,7 +127,6 @@ public class ChassisLocalizationTeleOp extends LinearOpMode {
                 telemetry.addData("俯仰角 (Pitch)", "%.2f deg", solution.launcherAngle);
 
                 // TODO: 在这里将计算结果应用到您的硬件
-                // 例如:
                 // shooterMotor.setRPM(solution.motorRpm);
                 // turretServo.setAngle(solution.aimAzimuthDeg);
                 // pitchServo.setAngle(solution.launcherAngle);
@@ -194,8 +152,7 @@ public class ChassisLocalizationTeleOp extends LinearOpMode {
             sleep(20);
         }
 
-        // 6. 结束时清理
-        calculationThread.interrupt(); // OpMode结束，确保后台线程被正确关闭
+        // 6. 结束时无需清理线程
     }
 
     private String formatPose(Pose2D pose) {

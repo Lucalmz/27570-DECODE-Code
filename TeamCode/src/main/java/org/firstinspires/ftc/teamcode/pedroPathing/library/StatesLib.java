@@ -13,7 +13,7 @@ public class StatesLib {
     public static Target target = Target.TELEOP;
     public static Alliance alliance = Alliance.Red;
     public static BallsInQueue balls = BallsInQueue.getInstance();
-    public static AtomicReference<LaunchSolution> latestSolution;
+    public static volatile AtomicReference<LaunchSolution> latestSolution = new AtomicReference<>();
     public static Mode mode;
     public static Pose2D currentPose;
 }

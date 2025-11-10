@@ -14,19 +14,11 @@ import org.firstinspires.ftc.teamcode.pedroPathing.Services.Calculator;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.teamcode.pedroPathing.Models.Alliance;
 import org.firstinspires.ftc.teamcode.pedroPathing.Models.Target;
+import org.firstinspires.ftc.teamcode.vision.QuickScope.CalculationParams;
 import org.firstinspires.ftc.teamcode.vision.QuickScope.LaunchSolution;
 
 public class AlgorithmLib {
     private static Pose2D currentTarget;
-
-    /**
-     * Blocked calculator
-     * @return launch solution
-     */
-    public static LaunchSolution CalculateNewLaunch(){
-
-        return null;
-    }
     public static Runnable Aim(LaunchSolution solution){
         if(solution == null){
             return null;
@@ -88,5 +80,30 @@ public class AlgorithmLib {
         LeftBoard.act(Action.Lock);
         RightBoard.act(Action.Lock);
         return null;
+    }
+    public static void getNewLaunch() throws Exception {
+        double robotX_cm = -pinpointPoseProvider.getX(DistanceUnit.CM);
+        double robotY_cm = pinpointPoseProvider.getY(DistanceUnit.CM);
+
+        double normalizationX = robotX_cm / 365.76;
+        double normalizationY = robotY_cm / 365.76;
+
+        double cartesianVelX_m_s = -pinpointPoseProvider.getXVelocity(DistanceUnit.MM) / 1000.0;
+        double cartesianVelY_m_s = pinpointPoseProvider.getYVelocity(DistanceUnit.MM) / 1000.0;
+        double speed_m_s = Math.hypot(cartesianVelX_m_s, cartesianVelY_m_s);
+        double direction_rad = Math.atan2(cartesianVelY_m_s, cartesianVelX_m_s);
+        double direction_deg = Math.toDegrees(direction_rad);
+        if (direction_deg < 0) direction_deg += 360;
+        CalculationParams currentParams = new CalculationParams(
+                normalizationX,
+                normalizationY,
+                speed_m_s,
+                direction_deg,
+                alliance.name()
+        );
+        latestSolution.set(archerLogic.calculateSolution(currentParams));
+        if(latestSolution==null){
+            throw new Exception("Solution is null");
+        }
     }
 }

@@ -12,6 +12,6 @@ public class ConstantLib {
     public static final double ASSISTANT_STRENGTH = 0.2;
     public static final int SHOOT_ONE_BALL_DIST = 200;
     public static final int SHOOT_ONE_BALL_TIME = 200;
-    public static double LeftShooterKp, LeftShooterKi, LeftShooterKd, LeftShooterKf;
+
     private ConstantLib(){}
 }

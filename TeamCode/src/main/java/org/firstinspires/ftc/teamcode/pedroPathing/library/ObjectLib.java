@@ -14,8 +14,11 @@ import com.pedropathing.paths.HeadingInterpolator;
 import com.qualcomm.robotcore.hardware.DcMotor;
 
 import org.firstinspires.ftc.teamcode.pedroPathing.Services.IOStream;
+import org.firstinspires.ftc.teamcode.vision.Deadeye.Deadeye;
 import org.firstinspires.ftc.teamcode.vision.EchoLapse.GoBildaPinpointDriver;
+import org.firstinspires.ftc.teamcode.vision.EchoLapse.PinpointPoseProvider;
 import org.firstinspires.ftc.teamcode.vision.QuickScope.AprilTagLocalizer;
+import org.firstinspires.ftc.teamcode.vision.QuickScope.ArcherLogic;
 import org.firstinspires.ftc.teamcode.vision.QuickScope.LaunchSolution;
 
 import java.util.concurrent.atomic.AtomicReference;
@@ -34,9 +37,10 @@ public class ObjectLib {
     public static TaskManager Manager;
     public static Follower follower;
     public static TelemetryManager telemetryM;
-   // public static LaunchCalculator calculator;
-    public static AprilTagLocalizer localizer;
-    public static GoBildaPinpointDriver odo;
+    public static AprilTagLocalizer aprilTagLocalizer;
+    public static PinpointPoseProvider pinpointPoseProvider;
+    public static ArcherLogic archerLogic;
+    public static Deadeye deadeye;
     public static Lockable gamepadRumbleLock,calculatorLock,DeadeyeLock,IntakeMotorLock;
     /*public static HeadingInterpolator VisionCalculatedHeading = closestPoint ->
             MathFunctions.normalizeAngle(Math.toRadians(90));*/
