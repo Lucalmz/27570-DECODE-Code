@@ -1,11 +1,15 @@
 package org.firstinspires.ftc.teamcode.pedroPathing.TeleOp;
 
+import static org.firstinspires.ftc.teamcode.pedroPathing.library.AlgorithmLib.Aim;
+import static org.firstinspires.ftc.teamcode.pedroPathing.library.AlgorithmLib.IntakeStruct;
 import static org.firstinspires.ftc.teamcode.pedroPathing.library.AlgorithmLib.PopGreen;
 import static org.firstinspires.ftc.teamcode.pedroPathing.library.AlgorithmLib.PopPurple;
 import static org.firstinspires.ftc.teamcode.pedroPathing.library.AlgorithmLib.ShootAll;
 import static org.firstinspires.ftc.teamcode.pedroPathing.library.AlgorithmLib.ShootGreen;
 import static org.firstinspires.ftc.teamcode.pedroPathing.library.AlgorithmLib.ShootPurple;
+import static org.firstinspires.ftc.teamcode.pedroPathing.library.AlgorithmLib.checkShooterVelocity;
 import static org.firstinspires.ftc.teamcode.pedroPathing.library.AlgorithmLib.getNewLaunch;
+import static org.firstinspires.ftc.teamcode.pedroPathing.library.AlgorithmLib.updatePosition;
 import static org.firstinspires.ftc.teamcode.pedroPathing.library.ObjectLib.*;
 import static org.firstinspires.ftc.teamcode.pedroPathing.library.StatesLib.*;
 
@@ -30,8 +34,6 @@ import org.firstinspires.ftc.teamcode.vision.Deadeye.Deadeye;
 @TeleOp
 public class CompetitionTeleOp extends CustomOpMode {
     Deadeye DeadeyeAPI;
-    boolean flag;
-    double[] coords;
 
     @Override
     public void init() {
@@ -61,65 +63,50 @@ public class CompetitionTeleOp extends CustomOpMode {
     public void start() {
         super.start();
         currentPose = aprilTagLocalizer.getRobotPose();
+        Manager.submit(new Task.TaskBuilder(Priority.LOW, ConflictPolicy.QUEUE)
+                .require(PitchServo)
+                .require(LeftBoard)
+                .require(RightBoard)
+                .require(Shooter)
+                .require(IntakeMotor)
+                .require(Inhale)
+                .runs(IntakeStruct())
+                .build());
+        Manager.submit(new Task.TaskBuilder(Priority.LOW, ConflictPolicy.INTERRUPT)
+                .require(gamepadRumbleLock)
+                .require(fetchingLocalizerLock)
+                .runs(updatePosition())
+                .build());
     }
 
     @Override
     public void loop() {
         super.loop();
-        if (currentPose == null) {
-            Manager.submit(new Task.TaskBuilder(Priority.LOW, ConflictPolicy.IGNORE)
-                    .require(gamepadRumbleLock)
-                    .runs(() -> {
-                        gamepad1.rumble(0.5, 0.5, 50);
-                        currentPose = aprilTagLocalizer.getRobotPose();
-                        System.out.println("坐标：" + currentPose.getY(DistanceUnit.CM));
-                        pinpointPoseProvider.setPose(currentPose);
-                    })
-                    .build());
-            flag = true;
-        }
-        if (currentPose != null) {
-            aprilTagLocalizer.close();
-            gamepad.stopRumble();
-            follower.setPose(new Pose(currentPose.getX(DistanceUnit.INCH), currentPose.getY(DistanceUnit.INCH), currentPose.getHeading(AngleUnit.RADIANS)));
-            follower.update();
-            pinpointPoseProvider.setPose(currentPose);
-            flag = false;
-        }
-        if (!flag) {
-            Manager.submit(new Task.TaskBuilder(Priority.HIGH, ConflictPolicy.IGNORE)
-                    .require(calculatorLock)
-                    .runs(() -> {
-                        try {
-                            getNewLaunch();
-                        } catch (Exception e) {
-                            throw new RuntimeException(e);
-                        }
-                        if (latestSolution != null) {
-                            telemetry.addLine(">> 方案已解算 <<");
-                            telemetry.addData("发射电机转速 (RPM)", "%.0f", latestSolution.get().motorRpm);
-                            telemetry.addData("偏航角 (Yaw)", "%.2f deg", latestSolution.get().aimAzimuthDeg);
-                            telemetry.addData("俯仰角 (Pitch)", "%.2f deg", latestSolution.get().launcherAngle);
-                            telemetry.addData("坐标 (X,Y)", "%.2f, %.2f", currentPose.getX(DistanceUnit.CM), currentPose.getY(DistanceUnit.CM));
-                            telemetry.addData("Pinpoint坐标(X,Y)", "%.2f, %.2f", pinpointPoseProvider.getX(DistanceUnit.CM), pinpointPoseProvider.getY(DistanceUnit.CM));
-                            telemetry.addData("follower信息", follower.getPose().toString());
-                            telemetry.update();
-                        } else {
-                            telemetry.addLine("NULL");
-                            telemetry.update();
-                        }
-                    })
-                    .build());
-        }
+        Manager.submit(new Task.TaskBuilder(Priority.HIGH, ConflictPolicy.IGNORE)
+                .require(calculatorLock)
+                .require(fetchingLocalizerLock)
+                .runs(() -> {
+                    getNewLaunch();
+                    telemetry.addLine(">> 方案已解算 <<");
+                    telemetry.addData("发射电机转速 (RPM)", "%.0f", latestSolution.get().motorRpm);
+                    telemetry.addData("偏航角 (Yaw)", "%.2f deg", latestSolution.get().aimAzimuthDeg);
+                    telemetry.addData("俯仰角 (Pitch)", "%.2f deg", latestSolution.get().launcherAngle);
+                    telemetry.addData("坐标","(%.2f,%.2f)",pinpointPoseProvider.getX(DistanceUnit.CM),pinpointPoseProvider.getY(DistanceUnit.CM));
+                })
+                .build());
         //射击模式切换
         if (gamepad.right_bumper.Pressed()) {
             Manager.submit(new Task.TaskBuilder(Priority.LOW, ConflictPolicy.QUEUE)
                     .require(Inhale)
                     .require(IntakeMotor)
                     .runs(() -> {
-                        Inhale.act(Stop);
-                        IntakeMotor.act(Stop);
+                        Inhale.VelocityAct(Stop);
+                        IntakeMotor.VelocityAct(Stop);
                     })
+                    .build());
+            Manager.submit(new Task.TaskBuilder(Priority.LOW, ConflictPolicy.QUEUE)
+                    .require(gamepadRumbleLock)
+                    .runs(checkShooterVelocity())
                     .build());
             mode = Mode.ShootingMode;
         }
@@ -128,8 +115,8 @@ public class CompetitionTeleOp extends CustomOpMode {
                     .require(Inhale)
                     .require(IntakeMotor)
                     .runs(() -> {
-                        Inhale.act(Stop);
-                        IntakeMotor.act(Stop);
+                        Inhale.VelocityAct(Stop);
+                        IntakeMotor.VelocityAct(Stop);
                     })
                     .build());
             mode = Mode.Manual_Shooting;
@@ -140,11 +127,16 @@ public class CompetitionTeleOp extends CustomOpMode {
                     .require(LeftBoard)
                     .require(RightBoard)
                     .require(Shooter)
+                    .require(IntakeMotor)
+                    .require(Inhale)
+                    .runs(IntakeStruct())
+                    .build());
+            Manager.submit(new Task.TaskBuilder(Priority.LOW, ConflictPolicy.QUEUE)
+                    .require(IntakeMotor)
+                    .require(Inhale)
                     .runs(() -> {
-                        PitchServo.act(Up);
-                        LeftBoard.act(Lock);
-                        RightBoard.act(Lock);
-                        Shooter.act(Armed);
+                        IntakeMotor.VelocityAct(PullIn);
+                        Inhale.VelocityAct(PullIn);
                     })
                     .build());
             mode = Mode.IntakeMode;
@@ -166,24 +158,20 @@ public class CompetitionTeleOp extends CustomOpMode {
                 Manager.submit(new Task.TaskBuilder(Priority.LOW, ConflictPolicy.IGNORE)
                         .require(PitchServo)
                         .require(Shooter)
-                        .runs(() -> {
-                            PitchServo.SetTemporaryPosition(Calculator.DegreeToPitchServo(latestSolution.get().launcherAngle));
-                            Shooter.setVelocity(latestSolution.get().motorRpm / 60);
-                        })
+                        .runs(Aim())
                         .build());
-
-                if (Shooter.getVelocity() < latestSolution.get().motorRpm / 60) {
+                if (gamepad.cross.Pressed()) {
                     Manager.submit(new Task.TaskBuilder(Priority.LOW, ConflictPolicy.QUEUE)
-                            .require(gamepadRumbleLock)
-                            .runs(() -> {
-                                gamepad.rumble(0.8, 0.8, 60);
-                                try {
-                                    Thread.sleep(40);
-                                } catch (InterruptedException e) {
-                                    Thread.currentThread().interrupt();
-                                    throw new RuntimeException(e);
-                                }
-                            })
+                            .require(LeftBoard)
+                            .require(Inhale)
+                            .runs(ShootGreen())
+                            .build());
+                }
+                if (gamepad.square.Pressed()) {
+                    Manager.submit(new Task.TaskBuilder(Priority.LOW, ConflictPolicy.QUEUE)
+                            .require(RightBoard)
+                            .require(Inhale)
+                            .runs(ShootPurple())
                             .build());
                 }
                 break;
@@ -193,14 +181,14 @@ public class CompetitionTeleOp extends CustomOpMode {
                     Manager.submit(new Task.TaskBuilder(Priority.LOW, ConflictPolicy.QUEUE)
                             .require(LeftBoard)
                             .require(Inhale)
-                            .runs(ShootPurple())
+                            .runs(ShootGreen())
                             .build());
                 }
                 if (gamepad.square.Pressed()) {
                     Manager.submit(new Task.TaskBuilder(Priority.LOW, ConflictPolicy.QUEUE)
                             .require(RightBoard)
                             .require(Inhale)
-                            .runs(ShootGreen())
+                            .runs(ShootPurple())
                             .build());
                 }
                 break;
@@ -210,8 +198,8 @@ public class CompetitionTeleOp extends CustomOpMode {
                         .require(IntakeMotor)
                         .require(Inhale)
                         .runs(() -> {
-                            IntakeMotor.act(PullIn);
-                            Inhale.act(PullIn);
+                            IntakeMotor.VelocityAct(PullIn);
+                            Inhale.VelocityAct(PullIn);
                         })
                         .build());
                 Manager.submit(new Task.TaskBuilder(Priority.LOW, ConflictPolicy.IGNORE)
@@ -221,7 +209,7 @@ public class CompetitionTeleOp extends CustomOpMode {
                         })
                         .build()
                 );
-                if (gamepad.triangle.Pressed()) {
+                if (gamepad.cross.Pressed()) {
                     Manager.submit(new Task.TaskBuilder(Priority.LOW, ConflictPolicy.QUEUE)
                             .require(LeftBoard)
                             .runs(PopGreen())

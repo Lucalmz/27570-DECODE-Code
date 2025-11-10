@@ -15,6 +15,7 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
 public class Constants {
+    private static Follower INSTANCE;
     public static FollowerConstants followerConstants = new FollowerConstants()
             .mass(13)
             .forwardZeroPowerAcceleration(-67.06408661644541)
@@ -47,9 +48,12 @@ public class Constants {
     public static PathConstraints pathConstraints = new PathConstraints(0.99, 100, 0.8, 1);
 
     public static Follower createFollower(HardwareMap hardwareMap) {
-        return new FollowerBuilder(followerConstants, hardwareMap)
-                .pinpointLocalizer(localizerConstants)
-                .mecanumDrivetrain(driveConstants)
-                .build();
+        if(INSTANCE==null){
+            INSTANCE = new FollowerBuilder(followerConstants, hardwareMap)
+                    .pinpointLocalizer(localizerConstants)
+                    .mecanumDrivetrain(driveConstants)
+                    .build();
+        }
+        return INSTANCE;
     }
 }

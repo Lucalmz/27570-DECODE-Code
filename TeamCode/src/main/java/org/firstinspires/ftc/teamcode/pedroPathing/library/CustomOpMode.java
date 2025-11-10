@@ -13,6 +13,7 @@ import com.bear27570.yuan.BotFactory.Motor.MotorEx;
 import com.bear27570.yuan.BotFactory.Servo.ServoBuilders;
 import com.bear27570.yuan.BotFactory.ThreadManagement.TaskManager;
 import com.bylazar.telemetry.PanelsTelemetry;
+import com.pedropathing.geometry.Pose;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
@@ -28,6 +29,7 @@ import org.firstinspires.ftc.teamcode.pedroPathing.Models.Alliance;
 import org.firstinspires.ftc.teamcode.pedroPathing.Models.Mode;
 import org.firstinspires.ftc.teamcode.pedroPathing.Services.IOStream;
 import org.firstinspires.ftc.teamcode.vision.Deadeye.Deadeye;
+import org.firstinspires.ftc.teamcode.vision.EchoLapse.FollowerPoseProvider;
 import org.firstinspires.ftc.teamcode.vision.EchoLapse.PinpointPoseProvider;
 import org.firstinspires.ftc.teamcode.vision.QuickScope.AprilTagLocalizer;
 import org.firstinspires.ftc.teamcode.vision.QuickScope.ArcherLogic;
@@ -42,17 +44,19 @@ public class CustomOpMode extends OpMode {
     public void init(){
         Logger.initialize(false,System::nanoTime);
         follower = Constants.createFollower(hardwareMap);
+        follower.setStartingPose(new Pose(0,0,0 ));
         gamepad = GamepadEx.GetGamepadEx(gamepad1);
         Manager = TaskManager.getInstance();
         telemetryM = PanelsTelemetry.INSTANCE.getTelemetry();
         ioStream = new IOStream(hardwareMap.appContext);
         aprilTagLocalizer = new AprilTagLocalizer(hardwareMap);
-        pinpointPoseProvider = new PinpointPoseProvider(hardwareMap, "odo");
+        pinpointPoseProvider = new FollowerPoseProvider(follower);
         pinpointPoseProvider.initialize();
         archerLogic = new ArcherLogic();
         gamepadRumbleLock = new VirtualLock("gamepadRumbleLock");
         calculatorLock = new VirtualLock("calculatorLock");
         DeadeyeLock = new VirtualLock("DeadeyeLock");
+        fetchingLocalizerLock = new VirtualLock("fetchingLocalizerLock");
         deadeye = new Deadeye(hardwareMap);
         deadeye.start();
 
@@ -62,12 +66,12 @@ public class CustomOpMode extends OpMode {
             alliance = Alliance.Blue;
         }
         logger = Logger.getINSTANCE();
-        IntakeMotor = new MotorEx.MotorBuilder("IntakeMotor",MotorType.goBILDA,5.2,0,true,hardwareMap,new PIDFCoefficients(150,10,30,25),null)
-                .addVelocityAction(PullIn,15)
+        IntakeMotor = new MotorEx.MotorBuilder("IntakeMotor",MotorType.goBILDA,5.2,0,false,hardwareMap,new PIDFCoefficients(150,10,30,25),null)
+                .addVelocityAction(PullIn,13)
                 .addVelocityAction(Stop,0)
-                .addVelocityAction(Out,-15)
+                .addVelocityAction(Out,-13)
                 .build();
-        Shooter = new MotorEx.MotorBuilder("RightShooter",MotorType.goBILDA,1,0,true,hardwareMap,new PIDFCoefficients(180,0,20,15.85),null)
+        Shooter = new MotorEx.MotorBuilder("RightShooter",MotorType.goBILDA,1,0,true,hardwareMap,new PIDFCoefficients(170,0,20,15.85),null)
                 .addMotorWithVelPIDF("LeftShooter",true,new PIDFCoefficients(160,0,90,18))
                 .addVelocityAction(Armed,7)
                 .build();
@@ -77,18 +81,19 @@ public class CustomOpMode extends OpMode {
                 .addVelocityAction(Out,-6)
                 .build();
         LeftBoard = new ServoBuilders.PWMServoBuilder("LeftBoard",Lock,0.53,false,hardwareMap)
-                .addAction(Shoot,0.795)
+                .addAction(Shoot,0.82)
                 .addAction(Back,0.97)
                 .build();
 
         RightBoard = new ServoBuilders.PWMServoBuilder("RightBoard",Lock,0.90,false,hardwareMap)
-                .addAction(Shoot,0.65)
+                .addAction(Shoot,0.618)
                 .addAction(Back,0.4)
                 .build();
 
-        PitchServo = new ServoBuilders.PWMServoBuilder("RightPitch",Up,1,true,hardwareMap)
-                .addServo("LeftPitch",false)
-                .addAction(Down,1)
+        PitchServo = new ServoBuilders.PWMServoBuilder("LeftPitch",Up,1,false,hardwareMap)
+                .addServo("RightPitch",true)
+                .addAction(Down,0)
+                .setPositionDifference(0.007)
                 .build();
         switch (target){
             case TELEOP:

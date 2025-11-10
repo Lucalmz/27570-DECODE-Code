@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode.vision.EchoLapse;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 
 /**
  * 一个提供机器人位姿和速度信息的通用接口。
@@ -16,6 +17,17 @@ public interface IPoseProvider {
      * 更新从硬件读取的最新数据。在每次循环中都应调用此方法。
      */
     void update();
+
+    /**
+     * 设置机器人当前的位置
+     * @param pose
+     */
+    void setPose(Pose2D pose);
+
+    /**
+     * 初始化硬件
+     */
+    void initialize();
 
     /**
      * 获取机器人当前在X轴上的位置。

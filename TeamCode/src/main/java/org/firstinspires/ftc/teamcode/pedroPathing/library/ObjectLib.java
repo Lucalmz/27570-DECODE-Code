@@ -16,6 +16,7 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import org.firstinspires.ftc.teamcode.pedroPathing.Services.IOStream;
 import org.firstinspires.ftc.teamcode.vision.Deadeye.Deadeye;
 import org.firstinspires.ftc.teamcode.vision.EchoLapse.GoBildaPinpointDriver;
+import org.firstinspires.ftc.teamcode.vision.EchoLapse.IPoseProvider;
 import org.firstinspires.ftc.teamcode.vision.EchoLapse.PinpointPoseProvider;
 import org.firstinspires.ftc.teamcode.vision.QuickScope.AprilTagLocalizer;
 import org.firstinspires.ftc.teamcode.vision.QuickScope.ArcherLogic;
@@ -38,10 +39,10 @@ public class ObjectLib {
     public static Follower follower;
     public static TelemetryManager telemetryM;
     public static volatile AprilTagLocalizer aprilTagLocalizer;
-    public static volatile PinpointPoseProvider pinpointPoseProvider;
+    public static volatile IPoseProvider pinpointPoseProvider;
     public static volatile ArcherLogic archerLogic;
     public static volatile Deadeye deadeye;
-    public static Lockable gamepadRumbleLock,calculatorLock,DeadeyeLock;
+    public static Lockable gamepadRumbleLock,calculatorLock,DeadeyeLock,fetchingLocalizerLock;
     /*public static HeadingInterpolator VisionCalculatedHeading = closestPoint ->
             MathFunctions.normalizeAngle(Math.toRadians(90));*/
     private ObjectLib (){}

@@ -4,10 +4,10 @@ import com.pedropathing.math.Vector;
 
 public class Calculator {
     public static double DegreeToPitchServo(double degree){
-        if(degree<54.9||degree>90){
+        /*if(degree<54.9||degree>90){
             throw new IllegalArgumentException("Degree"+degree+"is not available");
-        }
-        return (90-degree)*0.02857142857142857142857142857143;
+        }*/
+        return (90-degree)*0.02857142857142857142857142857143-0.05;
     }
     /**
             * 根据玩家输入和辅助瞄准修正，计算最终混合后的控制输出。
