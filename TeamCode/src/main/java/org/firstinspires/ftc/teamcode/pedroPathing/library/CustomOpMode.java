@@ -45,6 +45,7 @@ public class CustomOpMode extends OpMode {
         Logger.initialize(false,System::nanoTime);
         follower = Constants.createFollower(hardwareMap);
         follower.setStartingPose(new Pose(0,0,0 ));
+        follower.startTeleopDrive();
         gamepad = GamepadEx.GetGamepadEx(gamepad1);
         Manager = TaskManager.getInstance();
         telemetryM = PanelsTelemetry.INSTANCE.getTelemetry();
@@ -161,13 +162,13 @@ public class CustomOpMode extends OpMode {
                     if (coefficient < 0.05) {
                         follower.updateTunerStyleHybridDrive(Math.pow(-gamepad.left_stick_y.PressPosition(), 3),
                                 Math.pow(-gamepad.left_stick_x.PressPosition(), 3),
-                                Math.toRadians(latestSolution.get().aimAzimuthDeg-90)
+                                Math.toRadians(latestSolution.get().aimAzimuthDeg)
                         );
                         return;
                     }
                     follower.updateTunerStyleHybridDrive(Math.pow(-gamepad.left_stick_y.PressPosition()*(1-coefficient), 3),
                             Math.pow(-gamepad.left_stick_x.PressPosition()*(1-coefficient), 3),
-                            Math.toRadians(latestSolution.get().aimAzimuthDeg-90)
+                            Math.toRadians(latestSolution.get().aimAzimuthDeg)
                     );
                     break;
                 }

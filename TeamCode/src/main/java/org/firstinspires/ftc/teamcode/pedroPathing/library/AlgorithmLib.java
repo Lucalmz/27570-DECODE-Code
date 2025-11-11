@@ -18,6 +18,7 @@ import com.bear27570.yuan.BotFactory.Model.Priority;
 import com.bear27570.yuan.BotFactory.ThreadManagement.Task;
 import com.pedropathing.geometry.Pose;
 
+import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.R;
@@ -113,6 +114,7 @@ public class AlgorithmLib {
             }
         }
         gamepad.stopRumble();
+        aprilTagLocalizer.close();
         pinpointPoseProvider.setPose(pose);
         return null;
     }
@@ -140,15 +142,17 @@ public class AlgorithmLib {
         return null;
     }
 
-    public static Runnable getNewLaunch() {
+    public static Runnable getNewLaunch(Telemetry telemetry) {
         pinpointPoseProvider.update();
-        double robotX_cm = -pinpointPoseProvider.getX(DistanceUnit.CM);
+        double robotX_cm = pinpointPoseProvider.getX(DistanceUnit.CM);
         double robotY_cm = pinpointPoseProvider.getY(DistanceUnit.CM);
 
         double normalizationX = robotX_cm / 365.76;
         double normalizationY = robotY_cm / 365.76;
+        telemetry.addData("NormalizationX", normalizationX);
+        telemetry.addData("NormalizationY", normalizationY);
 
-        double cartesianVelX_m_s = -pinpointPoseProvider.getXVelocity(DistanceUnit.METER);
+        double cartesianVelX_m_s = pinpointPoseProvider.getXVelocity(DistanceUnit.METER);
         double cartesianVelY_m_s = pinpointPoseProvider.getYVelocity(DistanceUnit.METER);
         double speed_m_s = Math.hypot(cartesianVelX_m_s, cartesianVelY_m_s);
         double direction_rad = Math.atan2(cartesianVelY_m_s, cartesianVelX_m_s);

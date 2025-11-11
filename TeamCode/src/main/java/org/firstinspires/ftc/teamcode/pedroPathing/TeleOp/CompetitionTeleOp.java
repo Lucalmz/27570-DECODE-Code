@@ -28,12 +28,14 @@ import org.firstinspires.ftc.teamcode.pedroPathing.Models.Alliance;
 import org.firstinspires.ftc.teamcode.pedroPathing.Models.Mode;
 import org.firstinspires.ftc.teamcode.pedroPathing.Models.Target;
 import org.firstinspires.ftc.teamcode.pedroPathing.Services.Calculator;
+import org.firstinspires.ftc.teamcode.pedroPathing.Services.LoopFrequencyMonitor;
 import org.firstinspires.ftc.teamcode.pedroPathing.library.CustomOpMode;
 import org.firstinspires.ftc.teamcode.vision.Deadeye.Deadeye;
 
 @TeleOp
 public class CompetitionTeleOp extends CustomOpMode {
     Deadeye DeadeyeAPI;
+    LoopFrequencyMonitor monitor;
 
     @Override
     public void init() {
@@ -41,6 +43,7 @@ public class CompetitionTeleOp extends CustomOpMode {
         super.init();
         DeadeyeAPI = new Deadeye(hardwareMap);
         DeadeyeAPI.start();
+        monitor = new LoopFrequencyMonitor();
     }
 
     @Override
@@ -62,7 +65,6 @@ public class CompetitionTeleOp extends CustomOpMode {
     @Override
     public void start() {
         super.start();
-        currentPose = aprilTagLocalizer.getRobotPose();
         Manager.submit(new Task.TaskBuilder(Priority.LOW, ConflictPolicy.QUEUE)
                 .require(PitchServo)
                 .require(LeftBoard)
@@ -72,7 +74,7 @@ public class CompetitionTeleOp extends CustomOpMode {
                 .require(Inhale)
                 .runs(IntakeStruct())
                 .build());
-        Manager.submit(new Task.TaskBuilder(Priority.LOW, ConflictPolicy.INTERRUPT)
+        Manager.submit(new Task.TaskBuilder(Priority.LOW, ConflictPolicy.UNINTERRUPTIBLE)
                 .require(gamepadRumbleLock)
                 .require(fetchingLocalizerLock)
                 .runs(updatePosition())
@@ -82,11 +84,12 @@ public class CompetitionTeleOp extends CustomOpMode {
     @Override
     public void loop() {
         super.loop();
+        monitor.displayTelemetry(telemetry);
         Manager.submit(new Task.TaskBuilder(Priority.HIGH, ConflictPolicy.IGNORE)
                 .require(calculatorLock)
                 .require(fetchingLocalizerLock)
                 .runs(() -> {
-                    getNewLaunch();
+                    getNewLaunch(telemetry);
                     telemetry.addLine(">> 方案已解算 <<");
                     telemetry.addData("发射电机转速 (RPM)", "%.0f", latestSolution.get().motorRpm);
                     telemetry.addData("偏航角 (Yaw)", "%.2f deg", latestSolution.get().aimAzimuthDeg);

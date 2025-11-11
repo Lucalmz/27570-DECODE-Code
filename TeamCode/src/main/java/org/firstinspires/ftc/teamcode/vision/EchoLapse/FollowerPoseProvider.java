@@ -27,7 +27,7 @@ public class FollowerPoseProvider implements IPoseProvider {
      */
     @Override
     public void setPose(Pose2D pose) {
-        follower.setPose(new Pose(pose.getX(DistanceUnit.INCH),pose.getY(DistanceUnit.INCH),pose.getHeading(AngleUnit.RADIANS)));
+        follower.setPose(new Pose(pose.getY(DistanceUnit.INCH),pose.getX(DistanceUnit.INCH),pose.getHeading(AngleUnit.RADIANS)));
     }
 
     /**
@@ -48,9 +48,9 @@ public class FollowerPoseProvider implements IPoseProvider {
     @Override
     public double getX(DistanceUnit unit) {
         if(unit == DistanceUnit.INCH){
-            return follower.getPose().getX();
+            return follower.getPose().getY();
         }
-        double x = follower.getPose().getX()*25.4;
+        double x = follower.getPose().getY()*25.4;
         if(unit == DistanceUnit.MM){
             return x;
         }
@@ -72,9 +72,9 @@ public class FollowerPoseProvider implements IPoseProvider {
     @Override
     public double getY(DistanceUnit unit) {
         if(unit == DistanceUnit.INCH){
-            return follower.getPose().getY();
+            return follower.getPose().getX();
         }
-        double x = follower.getPose().getY()*25.4;
+        double x = follower.getPose().getX()*25.4;
         if(unit == DistanceUnit.MM){
             return x;
         }
@@ -110,9 +110,9 @@ public class FollowerPoseProvider implements IPoseProvider {
     @Override
     public double getXVelocity(DistanceUnit unit) {
         if(unit == DistanceUnit.INCH){
-            return follower.getVelocity().getXComponent();
+            return follower.getVelocity().getYComponent();
         }
-        double x = follower.getVelocity().getXComponent()*25.4;
+        double x = follower.getVelocity().getYComponent()*25.4;
         if(unit == DistanceUnit.MM){
             return x;
         }
@@ -134,9 +134,9 @@ public class FollowerPoseProvider implements IPoseProvider {
     @Override
     public double getYVelocity(DistanceUnit unit) {
         if(unit == DistanceUnit.INCH){
-            return follower.getVelocity().getYComponent();
+            return follower.getVelocity().getXComponent();
         }
-        double x = follower.getVelocity().getYComponent()*25.4;
+        double x = follower.getVelocity().getXComponent()*25.4;
         if(unit == DistanceUnit.MM){
             return x;
         }
