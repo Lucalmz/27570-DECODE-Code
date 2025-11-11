@@ -16,4 +16,5 @@ public class StatesLib {
     public static volatile AtomicReference<LaunchSolution> latestSolution = new AtomicReference<>();
     public static Mode mode;
     public static volatile Pose2D currentPose;
+    public static double HeadingForFieldInAlliance;
 }

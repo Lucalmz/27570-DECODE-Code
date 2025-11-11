@@ -81,7 +81,7 @@ public class ArcherLogic {
                 Vector2D vProjectileHVec = new Vector2D(vProjectileHMag * Math.cos(targetDirRad), vProjectileHMag * Math.sin(targetDirRad));
                 Vector2D vLauncherHVec = vProjectileHVec.subtract(vVehicleVec);
                 double vLauncherHMag = vLauncherHVec.magnitude();
-                double aimAzimuthRad = Math.atan2(vLauncherHVec.y, vLauncherHVec.x);
+                double aimAzimuthRad = Math.atan2(vLauncherHVec.y, vLauncherHVec.x) - Math.PI / 2;
                 double launcherVelocity = Math.sqrt(vLauncherHMag * vLauncherHMag + vProjectileV * vProjectileV);
                 double launcherAngleDeg = Math.toDegrees(Math.atan2(vProjectileV, vLauncherHMag));
 

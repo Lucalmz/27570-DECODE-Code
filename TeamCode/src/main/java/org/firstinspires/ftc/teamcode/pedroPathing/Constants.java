@@ -22,7 +22,7 @@ public class Constants {
             .lateralZeroPowerAcceleration(-81.65783673400453)
             .translationalPIDFCoefficients(new PIDFCoefficients(0.22,0.001,0.01,0.03))
             .headingPIDFCoefficients(new PIDFCoefficients(2.2,0.01,0.3,0.02))
-            .turnHeadingErrorThreshold(0.001)
+            .turnHeadingErrorThreshold(0.01)
             .drivePIDFCoefficients(new FilteredPIDFCoefficients(0.01,0.001,0.0001,0.6,0.01))
             .centripetalScaling(0.005);
     public static MecanumConstants driveConstants = new MecanumConstants()
@@ -37,7 +37,7 @@ public class Constants {
             .rightRearMotorDirection(DcMotorSimple.Direction.FORWARD)
             .xVelocity(67.64028474101872)
             .yVelocity(34.70118004506028);
-    public static PinpointConstants localizerConstants = new PinpointConstants()
+    public static PinpointConstants localizerConstants_Auto = new PinpointConstants()
             .forwardPodY(-183)
             .strafePodX(86)
             .distanceUnit(DistanceUnit.MM)
@@ -46,12 +46,29 @@ public class Constants {
             .forwardEncoderDirection(GoBildaPinpointDriver.EncoderDirection.FORWARD)
             .strafeEncoderDirection(GoBildaPinpointDriver.EncoderDirection.FORWARD);
 
+    public static PinpointConstants localizerConstants_TeleOp = new PinpointConstants()
+            .forwardPodY(-86)
+            .strafePodX(183)
+            .distanceUnit(DistanceUnit.MM)
+            .hardwareMapName("odo")
+            .encoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD)
+            .forwardEncoderDirection(GoBildaPinpointDriver.EncoderDirection.FORWARD)
+            .strafeEncoderDirection(GoBildaPinpointDriver.EncoderDirection.FORWARD);
     public static PathConstraints pathConstraints = new PathConstraints(0.99, 100, 0.8, 1);
 
     public static Follower createFollower(HardwareMap hardwareMap) {
         if(INSTANCE==null){
             INSTANCE = new FollowerBuilder(followerConstants, hardwareMap)
-                    .pinpointLocalizer(localizerConstants)
+                    .pinpointLocalizer(localizerConstants_Auto)
+                    .mecanumDrivetrain(driveConstants)
+                    .build();
+        }
+        return INSTANCE;
+    }
+    public static Follower createTeleOpFollower(HardwareMap hardwareMap) {
+        if(INSTANCE==null){
+            INSTANCE = new FollowerBuilder(followerConstants, hardwareMap)
+                    .pinpointLocalizer(localizerConstants_TeleOp)
                     .mecanumDrivetrain(driveConstants)
                     .build();
         }

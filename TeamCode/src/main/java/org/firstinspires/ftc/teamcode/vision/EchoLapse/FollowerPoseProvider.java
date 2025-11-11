@@ -27,7 +27,7 @@ public class FollowerPoseProvider implements IPoseProvider {
      */
     @Override
     public void setPose(Pose2D pose) {
-        follower.setPose(new Pose(pose.getY(DistanceUnit.INCH),pose.getX(DistanceUnit.INCH),pose.getHeading(AngleUnit.RADIANS)));
+        follower.setPose(new Pose(pose.getY(DistanceUnit.INCH),-pose.getX(DistanceUnit.INCH),pose.getHeading(AngleUnit.RADIANS)));
     }
 
     /**

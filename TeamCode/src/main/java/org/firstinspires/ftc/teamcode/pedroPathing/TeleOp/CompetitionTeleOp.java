@@ -1,15 +1,6 @@
 package org.firstinspires.ftc.teamcode.pedroPathing.TeleOp;
 
-import static org.firstinspires.ftc.teamcode.pedroPathing.library.AlgorithmLib.Aim;
-import static org.firstinspires.ftc.teamcode.pedroPathing.library.AlgorithmLib.IntakeStruct;
-import static org.firstinspires.ftc.teamcode.pedroPathing.library.AlgorithmLib.PopGreen;
-import static org.firstinspires.ftc.teamcode.pedroPathing.library.AlgorithmLib.PopPurple;
-import static org.firstinspires.ftc.teamcode.pedroPathing.library.AlgorithmLib.ShootAll;
-import static org.firstinspires.ftc.teamcode.pedroPathing.library.AlgorithmLib.ShootGreen;
-import static org.firstinspires.ftc.teamcode.pedroPathing.library.AlgorithmLib.ShootPurple;
-import static org.firstinspires.ftc.teamcode.pedroPathing.library.AlgorithmLib.checkShooterVelocity;
-import static org.firstinspires.ftc.teamcode.pedroPathing.library.AlgorithmLib.getNewLaunch;
-import static org.firstinspires.ftc.teamcode.pedroPathing.library.AlgorithmLib.updatePosition;
+import static org.firstinspires.ftc.teamcode.pedroPathing.library.AlgorithmLib.*;
 import static org.firstinspires.ftc.teamcode.pedroPathing.library.ObjectLib.*;
 import static org.firstinspires.ftc.teamcode.pedroPathing.library.StatesLib.*;
 
@@ -28,14 +19,17 @@ import org.firstinspires.ftc.teamcode.pedroPathing.Models.Alliance;
 import org.firstinspires.ftc.teamcode.pedroPathing.Models.Mode;
 import org.firstinspires.ftc.teamcode.pedroPathing.Models.Target;
 import org.firstinspires.ftc.teamcode.pedroPathing.Services.Calculator;
-import org.firstinspires.ftc.teamcode.pedroPathing.Services.LoopFrequencyMonitor;
+import org.firstinspires.ftc.teamcode.pedroPathing.Services.KalmanFilter;
+import org.firstinspires.ftc.teamcode.pedroPathing.library.AlgorithmLib;
 import org.firstinspires.ftc.teamcode.pedroPathing.library.CustomOpMode;
 import org.firstinspires.ftc.teamcode.vision.Deadeye.Deadeye;
+import org.firstinspires.ftc.teamcode.vision.QuickScope.AprilTagLocalizer;
+
+import java.util.IllegalFormatCodePointException;
 
 @TeleOp
 public class CompetitionTeleOp extends CustomOpMode {
     Deadeye DeadeyeAPI;
-    LoopFrequencyMonitor monitor;
 
     @Override
     public void init() {
@@ -43,7 +37,6 @@ public class CompetitionTeleOp extends CustomOpMode {
         super.init();
         DeadeyeAPI = new Deadeye(hardwareMap);
         DeadeyeAPI.start();
-        monitor = new LoopFrequencyMonitor();
     }
 
     @Override
@@ -74,28 +67,19 @@ public class CompetitionTeleOp extends CustomOpMode {
                 .require(Inhale)
                 .runs(IntakeStruct())
                 .build());
-        Manager.submit(new Task.TaskBuilder(Priority.LOW, ConflictPolicy.UNINTERRUPTIBLE)
-                .require(gamepadRumbleLock)
+        Manager.submit(new Task.TaskBuilder(Priority.LOW, ConflictPolicy.QUEUE)
                 .require(fetchingLocalizerLock)
-                .runs(updatePosition())
+                .runs(AlgorithmLib::setNewPosition)
                 .build());
     }
 
     @Override
     public void loop() {
         super.loop();
-        monitor.displayTelemetry(telemetry);
         Manager.submit(new Task.TaskBuilder(Priority.HIGH, ConflictPolicy.IGNORE)
                 .require(calculatorLock)
                 .require(fetchingLocalizerLock)
-                .runs(() -> {
-                    getNewLaunch(telemetry);
-                    telemetry.addLine(">> 方案已解算 <<");
-                    telemetry.addData("发射电机转速 (RPM)", "%.0f", latestSolution.get().motorRpm);
-                    telemetry.addData("偏航角 (Yaw)", "%.2f deg", latestSolution.get().aimAzimuthDeg);
-                    telemetry.addData("俯仰角 (Pitch)", "%.2f deg", latestSolution.get().launcherAngle);
-                    telemetry.addData("坐标","(%.2f,%.2f)",pinpointPoseProvider.getX(DistanceUnit.CM),pinpointPoseProvider.getY(DistanceUnit.CM));
-                })
+                .runs(AlgorithmLib::getNewLaunch)
                 .build());
         //射击模式切换
         if (gamepad.right_bumper.Pressed()) {
@@ -109,17 +93,20 @@ public class CompetitionTeleOp extends CustomOpMode {
                     .build());
             Manager.submit(new Task.TaskBuilder(Priority.LOW, ConflictPolicy.QUEUE)
                     .require(gamepadRumbleLock)
-                    .runs(checkShooterVelocity())
+                    .runs(AlgorithmLib::checkShooterVelocity)
                     .build());
+            filter = new KalmanFilter(latestSolution.get().aimAzimuthDeg,1,0.8,1);
             mode = Mode.ShootingMode;
         }
         if (gamepad.left_bumper.Pressed()) {
             Manager.submit(new Task.TaskBuilder(Priority.LOW, ConflictPolicy.QUEUE)
                     .require(Inhale)
                     .require(IntakeMotor)
+                    .require(Shooter)
                     .runs(() -> {
                         Inhale.VelocityAct(Stop);
                         IntakeMotor.VelocityAct(Stop);
+                        Shooter.VelocityAct(Shoot);
                     })
                     .build());
             mode = Mode.Manual_Shooting;
@@ -132,7 +119,7 @@ public class CompetitionTeleOp extends CustomOpMode {
                     .require(Shooter)
                     .require(IntakeMotor)
                     .require(Inhale)
-                    .runs(IntakeStruct())
+                    .runs(AlgorithmLib::IntakeStruct)
                     .build());
             Manager.submit(new Task.TaskBuilder(Priority.LOW, ConflictPolicy.QUEUE)
                     .require(IntakeMotor)
@@ -147,34 +134,34 @@ public class CompetitionTeleOp extends CustomOpMode {
         if (gamepad.left_bumper.isPressing() && gamepad.right_bumper.isPressing()) {
             return;
         }
-        if (gamepad.circle.Pressed()) {
-            Manager.submit(new Task.TaskBuilder(Priority.LOW, ConflictPolicy.QUEUE)
-                    .require(LeftBoard)
-                    .require(RightBoard)
-                    .require(Inhale)
-                    .runs(ShootAll())
-                    .build());
-        }
         //模式逻辑
         switch (mode) {
             case ShootingMode:
                 Manager.submit(new Task.TaskBuilder(Priority.LOW, ConflictPolicy.IGNORE)
                         .require(PitchServo)
                         .require(Shooter)
-                        .runs(Aim())
+                        .runs(AlgorithmLib::Aim)
                         .build());
                 if (gamepad.cross.Pressed()) {
                     Manager.submit(new Task.TaskBuilder(Priority.LOW, ConflictPolicy.QUEUE)
                             .require(LeftBoard)
                             .require(Inhale)
-                            .runs(ShootGreen())
+                            .runs(AlgorithmLib::ShootGreen)
                             .build());
                 }
                 if (gamepad.square.Pressed()) {
                     Manager.submit(new Task.TaskBuilder(Priority.LOW, ConflictPolicy.QUEUE)
                             .require(RightBoard)
                             .require(Inhale)
-                            .runs(ShootPurple())
+                            .runs(AlgorithmLib::ShootPurple)
+                            .build());
+                }
+                if (gamepad.circle.Pressed()) {
+                    Manager.submit(new Task.TaskBuilder(Priority.LOW, ConflictPolicy.QUEUE)
+                            .require(LeftBoard)
+                            .require(RightBoard)
+                            .require(Inhale)
+                            .runs(AlgorithmLib::ShootAll)
                             .build());
                 }
                 break;
@@ -184,14 +171,14 @@ public class CompetitionTeleOp extends CustomOpMode {
                     Manager.submit(new Task.TaskBuilder(Priority.LOW, ConflictPolicy.QUEUE)
                             .require(LeftBoard)
                             .require(Inhale)
-                            .runs(ShootGreen())
+                            .runs(AlgorithmLib::ShootGreen)
                             .build());
                 }
                 if (gamepad.square.Pressed()) {
                     Manager.submit(new Task.TaskBuilder(Priority.LOW, ConflictPolicy.QUEUE)
                             .require(RightBoard)
                             .require(Inhale)
-                            .runs(ShootPurple())
+                            .runs(AlgorithmLib::ShootPurple)
                             .build());
                 }
                 break;
@@ -215,13 +202,13 @@ public class CompetitionTeleOp extends CustomOpMode {
                 if (gamepad.cross.Pressed()) {
                     Manager.submit(new Task.TaskBuilder(Priority.LOW, ConflictPolicy.QUEUE)
                             .require(LeftBoard)
-                            .runs(PopGreen())
+                            .runs(AlgorithmLib::PopGreen)
                             .build());
                 }
                 if (gamepad.square.Pressed()) {
                     Manager.submit(new Task.TaskBuilder(Priority.LOW, ConflictPolicy.QUEUE)
                             .require(RightBoard)
-                            .runs(PopPurple())
+                            .runs(AlgorithmLib::PopPurple)
                             .build());
                 }
                 break;
@@ -232,5 +219,8 @@ public class CompetitionTeleOp extends CustomOpMode {
     public void stop() {
         super.stop();
         DeadeyeAPI.stop();
+        if (aprilTagLocalizer != null) {
+            aprilTagLocalizer.close();
+        }
     }
 }

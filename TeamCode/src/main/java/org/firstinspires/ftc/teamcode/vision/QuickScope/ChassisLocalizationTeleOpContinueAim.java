@@ -1,6 +1,5 @@
 package org.firstinspires.ftc.teamcode.vision.QuickScope; // 使用您指定的包名
 
-import com.pedropathing.follower.Follower;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -14,15 +13,13 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
-import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
-import org.firstinspires.ftc.teamcode.vision.EchoLapse.FollowerPoseProvider;
 import org.firstinspires.ftc.teamcode.vision.EchoLapse.IPoseProvider;
 import org.firstinspires.ftc.teamcode.vision.EchoLapse.PinpointPoseProvider;
 
 import java.util.Locale;
 
 @TeleOp(name = "Archer 自动瞄准系统 (V8.4 - 持续瞄准)", group = "Main") // 修改: 版本号和功能描述更新
-public class ChassisLocalizationTeleOp extends LinearOpMode {
+public class ChassisLocalizationTeleOpContinueAim extends LinearOpMode {
     // 定位与瞄准系统
     private AprilTagLocalizer aprilTagLocalizer;
     private IPoseProvider pinpointPoseProvider;
@@ -58,11 +55,9 @@ public class ChassisLocalizationTeleOp extends LinearOpMode {
     private long previousTime = 0;
     private final double I_GAIN = 0.00001; // 积分增益
     private final double D_GAIN = 0.006;  // 微分增益
-    private Follower follower;
 
     @Override
     public void runOpMode() throws InterruptedException {
-        follower = Constants.createTeleOpFollower(hardwareMap);
         // 1. 初始化设备
         initializeVisionAndShooter();
         initializeChassisAndIMU();
@@ -86,7 +81,6 @@ public class ChassisLocalizationTeleOp extends LinearOpMode {
 
         // 初始化PID时间戳
         previousTime = System.nanoTime();
-        follower.startTunerStyleHybridDrive(Math.toRadians(-90));
 
         while (opModeIsActive()) {
             // --- A. 获取机器人实时状态 (输入) ---
@@ -122,7 +116,8 @@ public class ChassisLocalizationTeleOp extends LinearOpMode {
 
                 if (savedSolution != null) {
                     // 如果解算成功，实时更新目标角度，并设置瞄准状态为true
-                    follower.updateTunerStyleHybridDrive(gamepad1.left_stick_y,gamepad1.left_stick_x,Math.toRadians(savedSolution.aimAzimuthDeg));
+                    targetHeading = savedSolution.aimAzimuthDeg;
+                    isAimingContinuously = true;
                 } else {
                     // 如果在按住期间丢失目标，则停止自动瞄准，恢复手动
                     isAimingContinuously = false;
@@ -130,6 +125,16 @@ public class ChassisLocalizationTeleOp extends LinearOpMode {
             } else {
                 // 如果松开Right Bumper，立即停止自动瞄准
                 isAimingContinuously = false;
+            }
+
+            // --- E. 底盘运动控制 ---
+            if (isAimingContinuously) {
+                // 当处于持续瞄准状态时，执行自动转向
+                // 注意: performAutoTurn内部仍然允许左摇杆控制平移
+                performAutoTurn();
+            } else {
+                // 否则，完全手动驾驶
+                manualDrive();
             }
 
             // --- F. 遥测数据显示与硬件控制 (始终使用 'savedSolution') ---
@@ -150,7 +155,7 @@ public class ChassisLocalizationTeleOp extends LinearOpMode {
     // ---------------------------------------------------------------------------------------------
     private void initializeVisionAndShooter() {
         aprilTagLocalizer = new AprilTagLocalizer(hardwareMap);
-        pinpointPoseProvider = new FollowerPoseProvider(follower);
+        pinpointPoseProvider = new PinpointPoseProvider(hardwareMap, "odo");
         archerLogic = new ArcherLogic();
 
         RightPitch = hardwareMap.get(Servo.class, "RightPitch");

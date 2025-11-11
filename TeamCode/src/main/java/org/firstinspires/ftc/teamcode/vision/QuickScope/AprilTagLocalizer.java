@@ -21,7 +21,7 @@ import java.util.List;
  */
 public class AprilTagLocalizer {
     private static final Position cameraPosition = new Position(DistanceUnit.CM,
-            17, -16.5, 14.5, 0);
+            -17.2, 16.5, 14.5, 0);
     private static final YawPitchRollAngles cameraOrientation = new YawPitchRollAngles(AngleUnit.DEGREES, 0, -47, -90, 0);
 
     private AprilTagProcessor aprilTag;

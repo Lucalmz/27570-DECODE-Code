@@ -139,6 +139,7 @@ class LocalizationTest extends OpMode {
     public void start() {
         follower.startTeleopDrive();
         follower.update();
+        follower.setPose(new Pose(0,0,0));
     }
 
     /**
