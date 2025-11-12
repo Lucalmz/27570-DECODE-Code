@@ -71,6 +71,10 @@ public class CustomOpMode extends OpMode {
                 .addVelocityAction(Stop, 0)
                 .addVelocityAction(Out, -13)
                 .build();
+        ClassifyServo = new ServoBuilders.CRServoBuilder("ClassifyServo",Stop,0,false,hardwareMap)
+                .addAction(Purple,1)
+                .addAction(Green,-1)
+                .build();
         Shooter = new MotorEx.MotorBuilder("RightShooter", MotorType.goBILDA, 1, 0, true, hardwareMap, new PIDFCoefficients(170, 0, 20, 15.85), null)
                 .addMotorWithVelPIDF("LeftShooter", true, new PIDFCoefficients(160, 0, 90, 18))
                 .addVelocityAction(Armed, 7)
@@ -80,6 +84,7 @@ public class CustomOpMode extends OpMode {
                 .addVelocityAction(PullIn, 6)
                 .addVelocityAction(Stop, 0)
                 .addVelocityAction(Out, -6)
+                .addVelocityAction(Shoot,13)
                 .build();
         LeftBoard = new ServoBuilders.PWMServoBuilder("LeftBoard", Lock, 0.53, false, hardwareMap)
                 .addAction(Shoot, 0.82)

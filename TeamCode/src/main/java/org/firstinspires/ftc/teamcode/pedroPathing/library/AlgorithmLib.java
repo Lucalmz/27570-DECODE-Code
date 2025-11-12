@@ -5,6 +5,7 @@ import static com.bear27570.yuan.BotFactory.Model.Action.Lock;
 import static com.bear27570.yuan.BotFactory.Model.Action.Out;
 import static com.bear27570.yuan.BotFactory.Model.Action.PullIn;
 import static com.bear27570.yuan.BotFactory.Model.Action.PullOut;
+import static com.bear27570.yuan.BotFactory.Model.Action.Purple;
 import static com.bear27570.yuan.BotFactory.Model.Action.Shoot;
 import static com.bear27570.yuan.BotFactory.Model.Action.Stop;
 import static com.bear27570.yuan.BotFactory.Model.Action.Up;
@@ -12,36 +13,32 @@ import static org.firstinspires.ftc.teamcode.pedroPathing.library.ConstantLib.*;
 import static org.firstinspires.ftc.teamcode.pedroPathing.library.ObjectLib.*;
 import static org.firstinspires.ftc.teamcode.pedroPathing.library.StatesLib.*;
 
-import androidx.annotation.NonNull;
 
 import com.bear27570.yuan.BotFactory.Model.Action;
-import com.bear27570.yuan.BotFactory.Model.ConflictPolicy;
-import com.bear27570.yuan.BotFactory.Model.Priority;
-import com.bear27570.yuan.BotFactory.ThreadManagement.Task;
-import com.pedropathing.geometry.Pose;
 
-import org.firstinspires.ftc.robotcore.external.Telemetry;
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
-import org.firstinspires.ftc.teamcode.R;
 import org.firstinspires.ftc.teamcode.pedroPathing.Services.Calculator;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
-import org.firstinspires.ftc.teamcode.pedroPathing.Models.Alliance;
-import org.firstinspires.ftc.teamcode.pedroPathing.Models.Target;
-import org.firstinspires.ftc.teamcode.vision.EchoLapse.PinpointPoseProvider;
 import org.firstinspires.ftc.teamcode.vision.QuickScope.CalculationParams;
-import org.firstinspires.ftc.teamcode.vision.QuickScope.LaunchSolution;
 
 public class AlgorithmLib {
     private static Pose2D currentTarget;
+    public static void ShootingArmed(){
+        Inhale.VelocityAct(Out);
+        IntakeMotor.VelocityAct(Stop);
+        ClassifyServo.act(Purple);
+        try{
+            Thread.sleep(MOVE_BACK_TIME);
+        }catch (InterruptedException e){
+            Thread.currentThread().interrupt();
+        }
+        Inhale.VelocityAct(Stop);
+    }
 
     public static void ShootGreen() {
         try {
-            Inhale.VelocityAct(Out);
-            Thread.sleep(MOVE_BACK_TIME);
-            Inhale.VelocityAct(PullIn);
             LeftBoard.act(Action.Shoot);
-
+            Inhale.VelocityAct(Shoot);
             Thread.sleep(SHOOT_ONE_BALL_TIME);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
@@ -62,10 +59,9 @@ public class AlgorithmLib {
 
     public static void ShootPurple() {
         try {
-            Inhale.VelocityAct(Out);
-            Thread.sleep(MOVE_BACK_TIME);
             RightBoard.act(Action.Shoot);
-            Inhale.VelocityAct(PullIn);
+            ClassifyServo.act(Purple);
+            Inhale.VelocityAct(Shoot);
             Thread.sleep(SHOOT_ONE_BALL_TIME);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
@@ -86,11 +82,10 @@ public class AlgorithmLib {
 
     public static void ShootAll() {
         try {
-            Inhale.VelocityAct(Out);
-            Thread.sleep(MOVE_BACK_TIME);
             LeftBoard.act(Shoot);
             RightBoard.act(Shoot);
-            Inhale.VelocityAct(PullIn);
+            ClassifyServo.act(Purple);
+            Inhale.VelocityAct(Shoot);
             Thread.sleep((long)(SHOOT_ONE_BALL_TIME * 2.5));
         } catch (InterruptedException e) {
             throw new RuntimeException(e);

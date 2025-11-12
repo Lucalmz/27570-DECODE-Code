@@ -26,6 +26,7 @@ import org.firstinspires.ftc.teamcode.vision.Deadeye.Deadeye;
 import org.firstinspires.ftc.teamcode.vision.QuickScope.AprilTagLocalizer;
 
 import java.util.IllegalFormatCodePointException;
+import java.util.Queue;
 
 @TeleOp
 public class CompetitionTeleOp extends CustomOpMode {
@@ -86,26 +87,26 @@ public class CompetitionTeleOp extends CustomOpMode {
             Manager.submit(new Task.TaskBuilder(Priority.LOW, ConflictPolicy.QUEUE)
                     .require(Inhale)
                     .require(IntakeMotor)
-                    .runs(() -> {
-                        Inhale.VelocityAct(Stop);
-                        IntakeMotor.VelocityAct(Stop);
-                    })
+                    .require(ClassifyServo)
+                    .runs(AlgorithmLib::ShootingArmed)
                     .build());
             Manager.submit(new Task.TaskBuilder(Priority.LOW, ConflictPolicy.QUEUE)
                     .require(gamepadRumbleLock)
                     .runs(AlgorithmLib::checkShooterVelocity)
                     .build());
-            filter = new KalmanFilter(latestSolution.get().aimAzimuthDeg,1,0.8,1);
+            filter = new KalmanFilter(latestSolution.get().aimAzimuthDeg, 1, 0.8, 1);
             mode = Mode.ShootingMode;
         }
         if (gamepad.left_bumper.Pressed()) {
             Manager.submit(new Task.TaskBuilder(Priority.LOW, ConflictPolicy.QUEUE)
                     .require(Inhale)
                     .require(IntakeMotor)
+                    .require(ClassifyServo)
+                    .runs(AlgorithmLib::ShootingArmed)
+                    .build());
+            Manager.submit(new Task.TaskBuilder(Priority.LOW, ConflictPolicy.QUEUE)
                     .require(Shooter)
                     .runs(() -> {
-                        Inhale.VelocityAct(Stop);
-                        IntakeMotor.VelocityAct(Stop);
                         Shooter.VelocityAct(Shoot);
                     })
                     .build());
@@ -133,6 +134,12 @@ public class CompetitionTeleOp extends CustomOpMode {
         }
         if (gamepad.left_bumper.isPressing() && gamepad.right_bumper.isPressing()) {
             return;
+        }
+        if(gamepad.ps.Pressed()){
+            Manager.submit(new Task.TaskBuilder(Priority.LOW, ConflictPolicy.IGNORE)
+                    .require(fetchingLocalizerLock)
+                    .runs(AlgorithmLib::setNewPosition)
+                    .build());
         }
         //模式逻辑
         switch (mode) {

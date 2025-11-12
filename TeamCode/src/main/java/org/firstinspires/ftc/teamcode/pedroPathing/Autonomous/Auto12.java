@@ -18,7 +18,16 @@ public class Auto12 extends CustomOpMode {
     private static final Pose ShootSecondSetPoint = new Pose(59,85);
     private static final Pose GateToSecondShootControlPoint = new Pose(40,65);
     private static final Pose GateToSecondShootSecondControlPoint = new Pose(59,70);
-    private static final Pose FinishSecondShootPoint = new Pose(23,60,180);
+    private static final Pose FinishSecondShootPoint = new Pose(47,96);
+    private static final Pose SecondShootControlPoint = new Pose(59,96);
+    private static final Pose ToGetTopSetPoint = new Pose(40,85,180);
+    private static final Pose ToGetTopSetControlPoint = new Pose(59,85);
+    private static final Pose GetTopSetPoint = new Pose(23,85,180);
+    private static final Pose ToShootTopSetPoint = new Pose(34,109);
+    private static final Pose ToShootTopSetControlPoint = new Pose(23,109);
+    private static final Pose FinishShootTopSetPoint = new Pose(68,75.5);
+    private static final Pose ShootTopSetControlPoint = new Pose(68,109);
+    private static final Pose ToGetBottomSetPoint = new Pose(40,85,180);
 
 
 
