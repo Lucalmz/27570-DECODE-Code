@@ -13,7 +13,7 @@ public class HybridTeleOpTest extends OpMode {
     Follower follower;
     double Value = 0;
     public void init(){
-        follower = Constants.createTeleOpFollower(hardwareMap);
+        follower = Constants.createAdvancedFollower(hardwareMap);
         follower.startTunerStyleHybridDrive(Math.toRadians(-90));
         gamepad = GamepadEx.GetGamepadEx(gamepad1);
     }

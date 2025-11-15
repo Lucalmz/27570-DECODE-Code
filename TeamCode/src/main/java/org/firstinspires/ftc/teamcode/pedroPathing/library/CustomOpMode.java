@@ -4,9 +4,6 @@ import static com.bear27570.yuan.BotFactory.Model.Action.*;
 
 import com.bear27570.yuan.AdvantageCoreLib.Logging.Logger;
 import com.bear27570.yuan.BotFactory.Gamepad.GamepadEx;
-import com.bear27570.yuan.BotFactory.Interface.Lockable;
-import com.bear27570.yuan.BotFactory.Interface.PeriodicRunnable;
-import com.bear27570.yuan.BotFactory.Model.Action;
 import com.bear27570.yuan.BotFactory.Model.MotorType;
 import com.bear27570.yuan.BotFactory.Model.VirtualLock;
 import com.bear27570.yuan.BotFactory.Motor.MotorEx;
@@ -15,43 +12,33 @@ import com.bear27570.yuan.BotFactory.ThreadManagement.TaskManager;
 import com.bylazar.telemetry.PanelsTelemetry;
 import com.pedropathing.geometry.Pose;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
-import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
+import com.qualcomm.robotcore.hardware.TouchSensor;
 
 import static org.firstinspires.ftc.teamcode.pedroPathing.library.ObjectLib.*;
 import static org.firstinspires.ftc.teamcode.pedroPathing.library.StatesLib.*;
-import static org.firstinspires.ftc.teamcode.pedroPathing.library.ConstantLib.*;
 
-import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import org.firstinspires.ftc.teamcode.pedroPathing.Models.Alliance;
 import org.firstinspires.ftc.teamcode.pedroPathing.Models.Mode;
+import org.firstinspires.ftc.teamcode.pedroPathing.Services.Calculator;
 import org.firstinspires.ftc.teamcode.pedroPathing.Services.IOStream;
-import org.firstinspires.ftc.teamcode.pedroPathing.Services.KalmanFilter;
+import org.firstinspires.ftc.teamcode.pedroPathing.Services.TouchSensorCounter;
 import org.firstinspires.ftc.teamcode.vision.Deadeye.Deadeye;
 import org.firstinspires.ftc.teamcode.vision.EchoLapse.FollowerPoseProvider;
-import org.firstinspires.ftc.teamcode.vision.EchoLapse.PinpointPoseProvider;
 import org.firstinspires.ftc.teamcode.vision.QuickScope.AprilTagLocalizer;
 import org.firstinspires.ftc.teamcode.vision.QuickScope.ArcherLogic;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
 
 public class CustomOpMode extends OpMode {
     public void init() {
         Logger.initialize(false, System::nanoTime);
-        follower = Constants.createTeleOpFollower(hardwareMap);
-        follower.setStartingPose(new Pose(0, 0, 0));
-        follower.startTeleopDrive();
+        follower = Constants.createAdvancedFollower(hardwareMap);
         gamepad = GamepadEx.GetGamepadEx(gamepad1);
         Manager = TaskManager.getInstance();
         telemetryM = PanelsTelemetry.INSTANCE.getTelemetry();
         ioStream = new IOStream(hardwareMap.appContext);
-        aprilTagLocalizer = new AprilTagLocalizer(hardwareMap);
-        pinpointPoseProvider = new FollowerPoseProvider(follower);
-        pinpointPoseProvider.initialize();
         archerLogic = new ArcherLogic();
         gamepadRumbleLock = new VirtualLock("gamepadRumbleLock");
         calculatorLock = new VirtualLock("calculatorLock");
@@ -66,19 +53,22 @@ public class CustomOpMode extends OpMode {
             alliance = Alliance.Blue;
         }
         logger = Logger.getINSTANCE();
+        touchSensor = new TouchSensorCounter(hardwareMap.get(TouchSensor.class,"TouchSensor"),50);
         IntakeMotor = new MotorEx.MotorBuilder("IntakeMotor", MotorType.goBILDA, 5.2, 0, false, hardwareMap, new PIDFCoefficients(150, 10, 30, 25), null)
-                .addVelocityAction(PullIn, 13)
+                .addVelocityAction(PullIn, 20)
                 .addVelocityAction(Stop, 0)
-                .addVelocityAction(Out, -13)
+                .addVelocityAction(Out, -20)
                 .build();
         ClassifyServo = new ServoBuilders.CRServoBuilder("ClassifyServo",Stop,0,false,hardwareMap)
                 .addAction(Purple,1)
                 .addAction(Green,-1)
                 .build();
-        Shooter = new MotorEx.MotorBuilder("RightShooter", MotorType.goBILDA, 1, 0, true, hardwareMap, new PIDFCoefficients(170, 0, 20, 15.85), null)
-                .addMotorWithVelPIDF("LeftShooter", true, new PIDFCoefficients(160, 0, 90, 18))
+        Shooter = new MotorEx.MotorBuilder("RightShooter", MotorType.goBILDA, 1, 0, true, hardwareMap, new PIDFCoefficients(180, 0.27, 60, 18.3), null)
+                .addMotorWithVelPIDF("LeftShooter", true, new PIDFCoefficients(180, 0.7, 13.5, 40))
                 .addVelocityAction(Armed, 7)
-                .addVelocityAction(Shoot, 20)
+                .addVelocityAction(ShootPose1, 23)
+                .addVelocityAction(ShootPose2,30)
+                .addVelocityAction(AutoShootPose,26)
                 .build();
         Inhale = new MotorEx.MotorBuilder("InhaleMotor", MotorType.goBILDA, 5.2, 0, false, hardwareMap, new PIDFCoefficients(17, 3, 8, 13), null)
                 .addVelocityAction(PullIn, 6)
@@ -99,10 +89,16 @@ public class CustomOpMode extends OpMode {
         PitchServo = new ServoBuilders.PWMServoBuilder("LeftPitch", Up, 1, false, hardwareMap)
                 .addServo("RightPitch", true)
                 .addAction(Down, 0)
+                .addAction(AutoShootPose, Calculator.DegreeToPitchServo(60))
                 .setPositionDifference(0.007)
                 .build();
         switch (target) {
             case TELEOP:
+                follower.setStartingPose(new Pose(0, 0, 0));
+                follower.startTeleopDrive();
+                aprilTagLocalizer = new AprilTagLocalizer(hardwareMap);
+                pinpointPoseProvider = new FollowerPoseProvider(follower);
+                pinpointPoseProvider.initialize();
                 mode = Mode.IntakeMode;
                 IntakeMotor.Init();
                 Inhale.Init();
@@ -110,9 +106,15 @@ public class CustomOpMode extends OpMode {
                 LeftBoard.act(Lock);
                 RightBoard.act(Lock);
                 PitchServo.act(Up);
+                ManualShootRatio=0;
                 break;
             case AUTONOMOUS:
-
+                IntakeMotor.Init();
+                Inhale.Init();
+                Shooter.Init();
+                LeftBoard.act(Lock);
+                RightBoard.act(Lock);
+                PitchServo.act(AutoShootPose);
                 break;
         }
     }
@@ -129,11 +131,12 @@ public class CustomOpMode extends OpMode {
     }
 
     public void loop() {
-        gamepad.update();
-        telemetryM.update();
-        pinpointPoseProvider.update();
         switch (target) {
             case TELEOP:
+                gamepad.update();
+                telemetryM.update();
+                pinpointPoseProvider.update();
+                touchSensor.update();
                 double coefficient = gamepad.left_trigger.PressPosition();
                 if (mode == Mode.IntakeMode || mode == Mode.Manual_Shooting) {
                     follower.update();

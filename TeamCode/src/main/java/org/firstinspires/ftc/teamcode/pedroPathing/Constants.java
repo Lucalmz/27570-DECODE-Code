@@ -42,7 +42,7 @@ public class Constants {
             .strafePodX(86)
             .distanceUnit(DistanceUnit.MM)
             .hardwareMapName("odo")
-            .encoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD)
+            .encoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_SWINGARM_POD)
             .forwardEncoderDirection(GoBildaPinpointDriver.EncoderDirection.FORWARD)
             .strafeEncoderDirection(GoBildaPinpointDriver.EncoderDirection.FORWARD);
 
@@ -54,22 +54,23 @@ public class Constants {
             .encoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD)
             .forwardEncoderDirection(GoBildaPinpointDriver.EncoderDirection.FORWARD)
             .strafeEncoderDirection(GoBildaPinpointDriver.EncoderDirection.FORWARD);
-    public static PathConstraints pathConstraints = new PathConstraints(0.99, 100, 0.8, 1);
-
+    public static PathConstraints pathConstraints = new PathConstraints(0.99, 100, 0.95, 1);
     public static Follower createFollower(HardwareMap hardwareMap) {
         if(INSTANCE==null){
             INSTANCE = new FollowerBuilder(followerConstants, hardwareMap)
                     .pinpointLocalizer(localizerConstants_Auto)
                     .mecanumDrivetrain(driveConstants)
+                    .pathConstraints(pathConstraints)
                     .build();
         }
         return INSTANCE;
     }
-    public static Follower createTeleOpFollower(HardwareMap hardwareMap) {
+    public static Follower createAdvancedFollower(HardwareMap hardwareMap) {
         if(INSTANCE==null){
             INSTANCE = new FollowerBuilder(followerConstants, hardwareMap)
                     .pinpointLocalizer(localizerConstants_TeleOp)
                     .mecanumDrivetrain(driveConstants)
+                    .pathConstraints(pathConstraints)
                     .build();
         }
         return INSTANCE;

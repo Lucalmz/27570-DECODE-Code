@@ -17,7 +17,6 @@ import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import org.firstinspires.ftc.teamcode.vision.EchoLapse.FollowerPoseProvider;
 import org.firstinspires.ftc.teamcode.vision.EchoLapse.IPoseProvider;
-import org.firstinspires.ftc.teamcode.vision.EchoLapse.PinpointPoseProvider;
 
 import java.util.Locale;
 
@@ -62,7 +61,7 @@ public class ChassisLocalizationTeleOp extends LinearOpMode {
 
     @Override
     public void runOpMode() throws InterruptedException {
-        follower = Constants.createTeleOpFollower(hardwareMap);
+        follower = Constants.createAdvancedFollower(hardwareMap);
         // 1. 初始化设备
         initializeVisionAndShooter();
         initializeChassisAndIMU();

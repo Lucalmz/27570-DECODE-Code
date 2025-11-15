@@ -15,7 +15,6 @@ import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import org.firstinspires.ftc.teamcode.vision.EchoLapse.FollowerPoseProvider;
 import org.firstinspires.ftc.teamcode.vision.EchoLapse.IPoseProvider;
-import org.firstinspires.ftc.teamcode.vision.EchoLapse.PinpointPoseProvider;
 import org.firstinspires.ftc.teamcode.vision.QuickScope.AprilTagLocalizer;
 import org.firstinspires.ftc.teamcode.vision.QuickScope.ArcherLogic;
 import org.firstinspires.ftc.teamcode.vision.QuickScope.CalculationParams;
@@ -28,7 +27,7 @@ public class TestTeleOp extends OpMode {
     Follower follower;
 
     public void init() {
-        follower = Constants.createTeleOpFollower(hardwareMap);
+        follower = Constants.createAdvancedFollower(hardwareMap);
         provider = new FollowerPoseProvider(follower);
         aprilTagLocalizer = new AprilTagLocalizer(hardwareMap);
         archerLogic = new ArcherLogic();

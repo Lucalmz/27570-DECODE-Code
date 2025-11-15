@@ -15,6 +15,7 @@ import static org.firstinspires.ftc.teamcode.pedroPathing.library.StatesLib.*;
 
 
 import com.bear27570.yuan.BotFactory.Model.Action;
+import com.pedropathing.math.MathFunctions;
 
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.pedroPathing.Services.Calculator;
@@ -23,6 +24,38 @@ import org.firstinspires.ftc.teamcode.vision.QuickScope.CalculationParams;
 
 public class AlgorithmLib {
     private static Pose2D currentTarget;
+    public static void ManualShootSwitcher(Action pose){
+        Shooter.VelocityAct(pose);
+    }
+    public static void ShootWithSequence(){
+        try {
+            switch (SequenceID) {
+                case 3:
+                    ShootPurple();
+                    Thread.sleep(WAIT_FOR_SEQUENCE);
+                    ShootPurple();
+                    Thread.sleep(WAIT_FOR_SEQUENCE);
+                    ShootGreen();
+                    break;
+                case 2:
+                    ShootPurple();
+                    Thread.sleep(WAIT_FOR_SEQUENCE);
+                    ShootGreen();
+                    Thread.sleep(WAIT_FOR_SEQUENCE);
+                    ShootPurple();
+                    break;
+                case 1:
+                    ShootGreen();
+                    Thread.sleep(WAIT_FOR_SEQUENCE);
+                    ShootPurple();
+                    Thread.sleep(WAIT_FOR_SEQUENCE);
+                    ShootPurple();
+                    break;
+            }
+        }catch (InterruptedException e){
+            Thread.currentThread().interrupt();
+        }
+    }
     public static void ShootingArmed(){
         Inhale.VelocityAct(Out);
         IntakeMotor.VelocityAct(Stop);
@@ -33,11 +66,13 @@ public class AlgorithmLib {
             Thread.currentThread().interrupt();
         }
         Inhale.VelocityAct(Stop);
+        ClassifyServo.act(Stop);
     }
 
     public static void ShootGreen() {
         try {
             LeftBoard.act(Action.Shoot);
+            Thread.sleep(BOARD_OPERATE_TIME);
             Inhale.VelocityAct(Shoot);
             Thread.sleep(SHOOT_ONE_BALL_TIME);
         } catch (InterruptedException e) {
@@ -50,6 +85,7 @@ public class AlgorithmLib {
     public static void PopGreen() {
         LeftBoard.act(Action.Shoot);
         try {
+            Thread.sleep(BOARD_OPERATE_TIME);
             Thread.sleep(SHOOT_ONE_BALL_TIME);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
@@ -60,7 +96,7 @@ public class AlgorithmLib {
     public static void ShootPurple() {
         try {
             RightBoard.act(Action.Shoot);
-            ClassifyServo.act(Purple);
+            Thread.sleep(BOARD_OPERATE_TIME);
             Inhale.VelocityAct(Shoot);
             Thread.sleep(SHOOT_ONE_BALL_TIME);
         } catch (InterruptedException e) {
@@ -73,6 +109,7 @@ public class AlgorithmLib {
     public static void PopPurple() {
         RightBoard.act(Shoot);
         try {
+            Thread.sleep(BOARD_OPERATE_TIME);
             Thread.sleep(SHOOT_ONE_BALL_TIME);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
@@ -84,7 +121,7 @@ public class AlgorithmLib {
         try {
             LeftBoard.act(Shoot);
             RightBoard.act(Shoot);
-            ClassifyServo.act(Purple);
+            Thread.sleep(BOARD_OPERATE_TIME);
             Inhale.VelocityAct(Shoot);
             Thread.sleep((long)(SHOOT_ONE_BALL_TIME * 2.5));
         } catch (InterruptedException e) {
@@ -99,6 +136,7 @@ public class AlgorithmLib {
         LeftBoard.act(Shoot);
         RightBoard.act(Shoot);
         try {
+            Thread.sleep(BOARD_OPERATE_TIME);
             Thread.sleep((long)(SHOOT_ONE_BALL_TIME * 2.5));
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
@@ -106,11 +144,21 @@ public class AlgorithmLib {
         LeftBoard.act(Lock);
         RightBoard.act(Lock);
     }
+    public static void findSequence(){
+        while(aprilTagLocalizer.getSpikeMarkLocation() == 0){
+            SequenceID = aprilTagLocalizer.getSpikeMarkLocation();
+            try {
+                Thread.sleep(20);
+            } catch (InterruptedException e) {
+                break;
+            }
+        }
+        ioStream.saveData("SequenceID", String.valueOf(SequenceID));
+    }
 
-    public static Runnable Aim() {
-        PitchServo.SetTemporaryPosition(Calculator.DegreeToPitchServo(latestSolution.get().launcherAngle));
+    public static void Aim() {
+        PitchServo.SetTemporaryPosition(PitchFilter.update(Calculator.DegreeToPitchServo(latestSolution.get().launcherAngle)));
         Shooter.setVelocity(latestSolution.get().motorRpm / 60);
-        return null;
     }
 
     public static Runnable IntakeStruct() {
@@ -120,7 +168,15 @@ public class AlgorithmLib {
         IntakeMotor.VelocityAct(PullIn);
         Inhale.VelocityAct(PullIn);
         Shooter.VelocityActInSlowSet(Armed,500);
+        touchSensor.reset();
         return null;
+    }
+    public static void IntakeStructInAuto() {
+        PitchServo.act(Up);
+        LeftBoard.act(Lock);
+        RightBoard.act(Lock);
+        IntakeMotor.VelocityAct(PullIn);
+        Inhale.VelocityAct(PullIn);
     }
 
     public static void checkShooterVelocity() {
@@ -160,5 +216,7 @@ public class AlgorithmLib {
         CalculationParams currentParams = new CalculationParams(
                 normalizationX, normalizationY, speed_m_s, direction_deg, alliance.name());
         latestSolution.set(archerLogic.calculateSolution(currentParams));
+        /*VisionCalculatedHeading = closestPoint ->
+                MathFunctions.normalizeAngle(Math.toRadians(latestSolution.get().aimAzimuthDeg));*/
     }
 }

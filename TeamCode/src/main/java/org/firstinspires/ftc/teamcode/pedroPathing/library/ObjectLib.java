@@ -12,9 +12,11 @@ import com.pedropathing.follower.Follower;
 import com.pedropathing.math.MathFunctions;
 import com.pedropathing.paths.HeadingInterpolator;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.TouchSensor;
 
 import org.firstinspires.ftc.teamcode.pedroPathing.Services.IOStream;
 import org.firstinspires.ftc.teamcode.pedroPathing.Services.KalmanFilter;
+import org.firstinspires.ftc.teamcode.pedroPathing.Services.TouchSensorCounter;
 import org.firstinspires.ftc.teamcode.vision.Deadeye.Deadeye;
 import org.firstinspires.ftc.teamcode.vision.EchoLapse.GoBildaPinpointDriver;
 import org.firstinspires.ftc.teamcode.vision.EchoLapse.IPoseProvider;
@@ -43,9 +45,9 @@ public class ObjectLib {
     public static volatile IPoseProvider pinpointPoseProvider;
     public static volatile ArcherLogic archerLogic;
     public static volatile Deadeye deadeye;
-    public static volatile KalmanFilter filter;
+    public static volatile KalmanFilter filter,PitchFilter;
     public static Lockable gamepadRumbleLock,calculatorLock,DeadeyeLock,fetchingLocalizerLock;
-    /*public static HeadingInterpolator VisionCalculatedHeading = closestPoint ->
-            MathFunctions.normalizeAngle(Math.toRadians(90));*/
+    public static volatile TouchSensorCounter touchSensor;
+    public static volatile HeadingInterpolator VisionCalculatedHeading;
     private ObjectLib (){}
 }

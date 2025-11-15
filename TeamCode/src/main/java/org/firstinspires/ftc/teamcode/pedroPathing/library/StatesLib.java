@@ -15,6 +15,8 @@ public class StatesLib {
     public static BallsInQueue balls = BallsInQueue.getInstance();
     public static volatile AtomicReference<LaunchSolution> latestSolution = new AtomicReference<>();
     public static Mode mode;
+    public static int ManualShootRatio;
+    public static volatile int SequenceID = 3;
     public static volatile Pose2D currentPose;
     public static double HeadingForFieldInAlliance;
 }

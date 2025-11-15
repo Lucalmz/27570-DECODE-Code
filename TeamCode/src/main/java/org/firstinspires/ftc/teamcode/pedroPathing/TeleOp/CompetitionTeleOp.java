@@ -66,7 +66,7 @@ public class CompetitionTeleOp extends CustomOpMode {
                 .require(Shooter)
                 .require(IntakeMotor)
                 .require(Inhale)
-                .runs(IntakeStruct())
+                .runs(AlgorithmLib::IntakeStruct)
                 .build());
         Manager.submit(new Task.TaskBuilder(Priority.LOW, ConflictPolicy.QUEUE)
                 .require(fetchingLocalizerLock)
@@ -76,122 +76,55 @@ public class CompetitionTeleOp extends CustomOpMode {
 
     @Override
     public void loop() {
-        super.loop();
-        Manager.submit(new Task.TaskBuilder(Priority.HIGH, ConflictPolicy.IGNORE)
-                .require(calculatorLock)
-                .require(fetchingLocalizerLock)
-                .runs(AlgorithmLib::getNewLaunch)
-                .build());
-        //射击模式切换
-        if (gamepad.right_bumper.Pressed()) {
-            Manager.submit(new Task.TaskBuilder(Priority.LOW, ConflictPolicy.QUEUE)
-                    .require(Inhale)
-                    .require(IntakeMotor)
-                    .require(ClassifyServo)
-                    .runs(AlgorithmLib::ShootingArmed)
-                    .build());
-            Manager.submit(new Task.TaskBuilder(Priority.LOW, ConflictPolicy.QUEUE)
-                    .require(gamepadRumbleLock)
-                    .runs(AlgorithmLib::checkShooterVelocity)
-                    .build());
-            filter = new KalmanFilter(latestSolution.get().aimAzimuthDeg, 1, 0.8, 1);
-            mode = Mode.ShootingMode;
-        }
-        if (gamepad.left_bumper.Pressed()) {
-            Manager.submit(new Task.TaskBuilder(Priority.LOW, ConflictPolicy.QUEUE)
-                    .require(Inhale)
-                    .require(IntakeMotor)
-                    .require(ClassifyServo)
-                    .runs(AlgorithmLib::ShootingArmed)
-                    .build());
-            Manager.submit(new Task.TaskBuilder(Priority.LOW, ConflictPolicy.QUEUE)
-                    .require(Shooter)
-                    .runs(() -> {
-                        Shooter.VelocityAct(Shoot);
-                    })
-                    .build());
-            mode = Mode.Manual_Shooting;
-        }
-        if (gamepad.right_bumper.justReleased() || gamepad.left_bumper.justReleased()) {
-            Manager.submit(new Task.TaskBuilder(Priority.LOW, ConflictPolicy.QUEUE)
-                    .require(PitchServo)
-                    .require(LeftBoard)
-                    .require(RightBoard)
-                    .require(Shooter)
-                    .require(IntakeMotor)
-                    .require(Inhale)
-                    .runs(AlgorithmLib::IntakeStruct)
-                    .build());
-            Manager.submit(new Task.TaskBuilder(Priority.LOW, ConflictPolicy.QUEUE)
-                    .require(IntakeMotor)
-                    .require(Inhale)
-                    .runs(() -> {
-                        IntakeMotor.VelocityAct(PullIn);
-                        Inhale.VelocityAct(PullIn);
-                    })
-                    .build());
-            mode = Mode.IntakeMode;
-        }
-        if (gamepad.left_bumper.isPressing() && gamepad.right_bumper.isPressing()) {
-            return;
-        }
-        if(gamepad.ps.Pressed()){
-            Manager.submit(new Task.TaskBuilder(Priority.LOW, ConflictPolicy.IGNORE)
+        try {
+            super.loop();
+            Manager.submit(new Task.TaskBuilder(Priority.HIGH, ConflictPolicy.IGNORE)
+                    .require(calculatorLock)
                     .require(fetchingLocalizerLock)
-                    .runs(AlgorithmLib::setNewPosition)
+                    .runs(AlgorithmLib::getNewLaunch)
                     .build());
-        }
-        //模式逻辑
-        switch (mode) {
-            case ShootingMode:
-                Manager.submit(new Task.TaskBuilder(Priority.LOW, ConflictPolicy.IGNORE)
-                        .require(PitchServo)
-                        .require(Shooter)
-                        .runs(AlgorithmLib::Aim)
+            //射击模式切换
+            if (gamepad.right_bumper.Pressed()) {
+                Manager.submit(new Task.TaskBuilder(Priority.LOW, ConflictPolicy.QUEUE)
+                        .require(Inhale)
+                        .require(IntakeMotor)
+                        .require(ClassifyServo)
+                        .runs(AlgorithmLib::ShootingArmed)
                         .build());
-                if (gamepad.cross.Pressed()) {
-                    Manager.submit(new Task.TaskBuilder(Priority.LOW, ConflictPolicy.QUEUE)
-                            .require(LeftBoard)
-                            .require(Inhale)
-                            .runs(AlgorithmLib::ShootGreen)
-                            .build());
-                }
-                if (gamepad.square.Pressed()) {
-                    Manager.submit(new Task.TaskBuilder(Priority.LOW, ConflictPolicy.QUEUE)
-                            .require(RightBoard)
-                            .require(Inhale)
-                            .runs(AlgorithmLib::ShootPurple)
-                            .build());
-                }
-                if (gamepad.circle.Pressed()) {
-                    Manager.submit(new Task.TaskBuilder(Priority.LOW, ConflictPolicy.QUEUE)
-                            .require(LeftBoard)
-                            .require(RightBoard)
-                            .require(Inhale)
-                            .runs(AlgorithmLib::ShootAll)
-                            .build());
-                }
-                break;
-            case Manual_Shooting:
-
-                if (gamepad.cross.Pressed()) {
-                    Manager.submit(new Task.TaskBuilder(Priority.LOW, ConflictPolicy.QUEUE)
-                            .require(LeftBoard)
-                            .require(Inhale)
-                            .runs(AlgorithmLib::ShootGreen)
-                            .build());
-                }
-                if (gamepad.square.Pressed()) {
-                    Manager.submit(new Task.TaskBuilder(Priority.LOW, ConflictPolicy.QUEUE)
-                            .require(RightBoard)
-                            .require(Inhale)
-                            .runs(AlgorithmLib::ShootPurple)
-                            .build());
-                }
-                break;
-
-            case IntakeMode:
-                Manager.submit(new Task.TaskBuilder(Priority.LOW, ConflictPolicy.IGNORE)
+                Manager.submit(new Task.TaskBuilder(Priority.LOW, ConflictPolicy.QUEUE)
+                        .require(gamepadRumbleLock)
+                        .runs(AlgorithmLib::checkShooterVelocity)
+                        .build());
+                filter = new KalmanFilter(latestSolution.get().aimAzimuthDeg, 1, 0.8, 1);
+                PitchFilter = new KalmanFilter(latestSolution.get().launcherAngle, 1, 0.8, 1);
+                mode = Mode.ShootingMode;
+            }
+            if (gamepad.left_bumper.Pressed()) {
+                Manager.submit(new Task.TaskBuilder(Priority.LOW, ConflictPolicy.QUEUE)
+                        .require(Inhale)
+                        .require(IntakeMotor)
+                        .require(ClassifyServo)
+                        .runs(AlgorithmLib::ShootingArmed)
+                        .build());
+                Manager.submit(new Task.TaskBuilder(Priority.LOW, ConflictPolicy.QUEUE)
+                        .require(Shooter)
+                        .runs(() -> {
+                            Shooter.VelocityAct(ShootPose1);
+                        })
+                        .build());
+                mode = Mode.Manual_Shooting;
+            }
+            if (gamepad.right_bumper.justReleased() || gamepad.left_bumper.justReleased()) {
+                Manager.submit(new Task.TaskBuilder(Priority.LOW, ConflictPolicy.QUEUE)
+                        .require(PitchServo)
+                        .require(LeftBoard)
+                        .require(RightBoard)
+                        .require(Shooter)
+                        .require(IntakeMotor)
+                        .require(Inhale)
+                        .runs(AlgorithmLib::IntakeStruct)
+                        .build());
+                Manager.submit(new Task.TaskBuilder(Priority.LOW, ConflictPolicy.QUEUE)
                         .require(IntakeMotor)
                         .require(Inhale)
                         .runs(() -> {
@@ -199,26 +132,113 @@ public class CompetitionTeleOp extends CustomOpMode {
                             Inhale.VelocityAct(PullIn);
                         })
                         .build());
-                Manager.submit(new Task.TaskBuilder(Priority.LOW, ConflictPolicy.IGNORE)
-                        .require(DeadeyeLock)
-                        .runs(() -> {
-                            deadeye.update();
-                        })
-                        .build()
-                );
-                if (gamepad.cross.Pressed()) {
-                    Manager.submit(new Task.TaskBuilder(Priority.LOW, ConflictPolicy.QUEUE)
-                            .require(LeftBoard)
-                            .runs(AlgorithmLib::PopGreen)
+                mode = Mode.IntakeMode;
+            }
+            if (gamepad.left_bumper.isPressing() && gamepad.right_bumper.isPressing()) {
+                return;
+            }
+            if (gamepad.touch_pad.Pressed()) {
+                Manager.submit(new Task.TaskBuilder(Priority.LOW, ConflictPolicy.QUEUE)
+                        .require(fetchingLocalizerLock)
+                        .runs(AlgorithmLib::setNewPosition)
+                        .build());
+            }
+            //模式逻辑
+            switch (mode) {
+                case ShootingMode:
+                    Manager.submit(new Task.TaskBuilder(Priority.LOW, ConflictPolicy.IGNORE)
+                            .require(PitchServo)
+                            .require(Shooter)
+                            .runs(AlgorithmLib::Aim)
                             .build());
-                }
-                if (gamepad.square.Pressed()) {
-                    Manager.submit(new Task.TaskBuilder(Priority.LOW, ConflictPolicy.QUEUE)
-                            .require(RightBoard)
-                            .runs(AlgorithmLib::PopPurple)
-                            .build());
-                }
-                break;
+                    if (gamepad.cross.Pressed()) {
+                        Manager.submit(new Task.TaskBuilder(Priority.LOW, ConflictPolicy.QUEUE)
+                                .require(LeftBoard)
+                                .require(Inhale)
+                                .runs(AlgorithmLib::ShootGreen)
+                                .build());
+                    }
+                    if (gamepad.square.Pressed()) {
+                        Manager.submit(new Task.TaskBuilder(Priority.LOW, ConflictPolicy.QUEUE)
+                                .require(RightBoard)
+                                .require(Inhale)
+                                .runs(AlgorithmLib::ShootPurple)
+                                .build());
+                    }
+                    if (gamepad.circle.Pressed()) {
+                        Manager.submit(new Task.TaskBuilder(Priority.LOW, ConflictPolicy.QUEUE)
+                                .require(LeftBoard)
+                                .require(RightBoard)
+                                .require(Inhale)
+                                .runs(AlgorithmLib::ShootAll)
+                                .build());
+                    }
+                    break;
+                case Manual_Shooting:
+                    if (gamepad.dpad_up.Pressed()) {
+                        if (ManualShootRatio == 0) {
+                            ManualShootRatio++;
+                            Manager.submit(new Task.TaskBuilder(Priority.LOW, ConflictPolicy.QUEUE)
+                                    .require(Shooter)
+                                    .runs(() -> {
+                                        ManualShootSwitcher(ShootPose2);
+                                    })
+                                    .build());
+                        }
+                    }
+                    if (gamepad.dpad_down.Pressed()) {
+                        if (ManualShootRatio == 1) {
+                            ManualShootRatio--;
+                            Manager.submit(new Task.TaskBuilder(Priority.LOW, ConflictPolicy.QUEUE)
+                                    .require(Shooter)
+                                    .runs(() -> {
+                                        ManualShootSwitcher(ShootPose1);
+                                    })
+                                    .build());
+                        }
+                    }
+                    if (gamepad.cross.Pressed()) {
+                        Manager.submit(new Task.TaskBuilder(Priority.LOW, ConflictPolicy.QUEUE)
+                                .require(LeftBoard)
+                                .require(Inhale)
+                                .runs(AlgorithmLib::ShootGreen)
+                                .build());
+                    }
+                    if (gamepad.square.Pressed()) {
+                        Manager.submit(new Task.TaskBuilder(Priority.LOW, ConflictPolicy.QUEUE)
+                                .require(RightBoard)
+                                .require(Inhale)
+                                .runs(AlgorithmLib::ShootPurple)
+                                .build());
+                    }
+                    break;
+
+                case IntakeMode:
+                    Manager.submit(new Task.TaskBuilder(Priority.LOW, ConflictPolicy.IGNORE)
+                            .require(DeadeyeLock)
+                            .runs(() -> {
+                                deadeye.update();
+                            })
+                            .build()
+                    );
+                    if (gamepad.cross.Pressed()) {
+                        Manager.submit(new Task.TaskBuilder(Priority.LOW, ConflictPolicy.QUEUE)
+                                .require(LeftBoard)
+                                .runs(AlgorithmLib::PopGreen)
+                                .build());
+                    }
+                    if (gamepad.square.Pressed()) {
+                        Manager.submit(new Task.TaskBuilder(Priority.LOW, ConflictPolicy.QUEUE)
+                                .require(RightBoard)
+                                .runs(AlgorithmLib::PopPurple)
+                                .build());
+                    }
+                    break;
+            }
+            telemetry.addData("Balls",touchSensor.getCount());
+            telemetry.update();
+        } catch (Exception ignored) {
+
         }
     }
 

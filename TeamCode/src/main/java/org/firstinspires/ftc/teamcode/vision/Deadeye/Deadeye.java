@@ -38,7 +38,7 @@ public class Deadeye {
     /**
      * 舵机对每个像素块执行分类动作的持续时间 (毫秒)。
      */
-    private static final double CLASSIFICATION_DURATION_MS = 2200.0; // 2秒
+    private static final double CLASSIFICATION_DURATION_MS = 5200.0; // 2秒
     /**
      * 两次分类动作之间的暂停时间 (毫秒)，让舵机有时间复位或稳定。
      */
@@ -178,13 +178,12 @@ public class Deadeye {
                     classifyMotor.setPower(0);
                     break;
                 }
-
                 if (classificationIndex < classificationPlan.size()) {
                     PixelType currentTarget = classificationPlan.get(classificationIndex);
                     if (currentTarget == PixelType.GREEN) {
-                        classifyMotor.setPower(1.0);
-                    } else {
                         classifyMotor.setPower(-1.0);
+                    } else {
+                        classifyMotor.setPower(1.0);
                     }
                 }
                 break;
