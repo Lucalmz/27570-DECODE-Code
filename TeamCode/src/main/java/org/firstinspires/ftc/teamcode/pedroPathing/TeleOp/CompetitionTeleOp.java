@@ -88,7 +88,6 @@ public class CompetitionTeleOp extends CustomOpMode {
                 Manager.submit(new Task.TaskBuilder(Priority.LOW, ConflictPolicy.QUEUE)
                         .require(Inhale)
                         .require(IntakeMotor)
-                        .require(ClassifyServo)
                         .runs(AlgorithmLib::ShootingArmed)
                         .build());
                 Manager.submit(new Task.TaskBuilder(Priority.LOW, ConflictPolicy.QUEUE)
@@ -103,7 +102,6 @@ public class CompetitionTeleOp extends CustomOpMode {
                 Manager.submit(new Task.TaskBuilder(Priority.LOW, ConflictPolicy.QUEUE)
                         .require(Inhale)
                         .require(IntakeMotor)
-                        .require(ClassifyServo)
                         .runs(AlgorithmLib::ShootingArmed)
                         .build());
                 Manager.submit(new Task.TaskBuilder(Priority.LOW, ConflictPolicy.QUEUE)

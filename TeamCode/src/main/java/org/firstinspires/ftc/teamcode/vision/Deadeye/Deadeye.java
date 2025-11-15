@@ -136,10 +136,6 @@ public class Deadeye {
     }
 
     private void processClassificationLogic(List<LLResultTypes.DetectorResult> allDetections) {
-        if (classificationState != ClassificationState.IDLE) {
-            return;
-        }
-
         List<LLResultTypes.DetectorResult> candidates = new ArrayList<>();
         for (LLResultTypes.DetectorResult detection : allDetections) {
             double[] error = calculateAlignmentError(detection);
@@ -154,14 +150,22 @@ public class Deadeye {
 
         candidates.sort(distanceComparator);
 
-        this.classificationPlan = candidates.stream()
+        List<PixelType> newPlan = candidates.stream()
                 .map(d -> "green".equals(d.getClassName()) ? PixelType.GREEN : PixelType.PURPLE)
                 .collect(Collectors.toList());
 
-        if (!this.classificationPlan.isEmpty()) {
-            this.classificationState = ClassificationState.CLASSIFYING;
-            this.classificationIndex = 0;
-            this.classificationTimer.reset();
+        if (newPlan.isEmpty()) {
+            return;
+        }
+
+        this.classificationPlan.clear();
+        this.classificationPlan.addAll(newPlan);
+        this.classificationState = ClassificationState.CLASSIFYING;
+        this.classificationIndex = 0;
+        this.classificationTimer.reset();
+
+        if (classificationState == ClassificationState.PAUSED) {
+            classificationState = ClassificationState.CLASSIFYING;
         }
     }
 

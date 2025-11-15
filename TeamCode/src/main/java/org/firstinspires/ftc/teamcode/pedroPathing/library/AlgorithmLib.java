@@ -59,14 +59,12 @@ public class AlgorithmLib {
     public static void ShootingArmed(){
         Inhale.VelocityAct(Out);
         IntakeMotor.VelocityAct(Stop);
-        ClassifyServo.act(Purple);
         try{
             Thread.sleep(MOVE_BACK_TIME);
         }catch (InterruptedException e){
             Thread.currentThread().interrupt();
         }
         Inhale.VelocityAct(Stop);
-        ClassifyServo.act(Stop);
     }
 
     public static void ShootGreen() {
